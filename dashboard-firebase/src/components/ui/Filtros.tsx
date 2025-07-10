@@ -9,12 +9,12 @@ const opcoesCadUnico = ["Sim", "Não", "Não informado"];
 
 // Slicers fixos conforme condicoes_arquivos
 const condicoesArquivos = {
-  BolsaFamilia: ['SIM', 'NAO'],
-  SituacaoPobreza: ['SIM', 'NAO'],
-  SetorEconomico: ['Agronegócio', 'Comércio', 'Construção', 'Indústria', 'Serviço'],
-  Sexo: ['Homem', 'Mulher', 'Não Identificado'],
-  RacaCor: ['Amarelo', 'Branco', 'Indígena', 'Não Identificado', 'Não Informado', 'Pardo', 'Preto'],
-  GrauInstrucao: [
+  bolsaFamilia: ['SIM', 'NAO'],
+  situacaoPobreza: ['SIM', 'NAO'],
+  setorEconomico: ['Agronegócio', 'Comércio', 'Construção', 'Indústria', 'Serviço'],
+  sexo: ['Homem', 'Mulher', 'Não Identificado'],
+  racaCor: ['Amarelo', 'Branco', 'Indígena', 'Não Identificado', 'Não Informado', 'Pardo', 'Preto'],
+  grauInstrucao: [
     '5º completo fundamental',
     '6º a 9º fundamental',
     'Analfabeto',
@@ -29,7 +29,7 @@ const condicoesArquivos = {
     'Superior incompleto',
     'Não identificado'
   ],
-  FaixaEtaria: [
+  faixaEtaria: [
     '18 a 24 anos',
     '25 a 29 anos',
     '30 a 39 anos',
@@ -41,8 +41,8 @@ const condicoesArquivos = {
     'Data de nascimento nula',
     'Data de nascimento inválida'
   ],
-  CadUnico: ['SIM', 'NÃO'],
-  UF: [
+  cadUnico: ['SIM', 'NÃO'],
+  uf: [
     'Acre',
     'Alagoas',
     'Amapá',
@@ -72,7 +72,7 @@ const condicoesArquivos = {
     'Tocantins',
     'Não informado'
   ],
-  Ano: [
+  ano: [
     '2021',
     '2022',
     '2023',
@@ -114,7 +114,7 @@ export default function Filtros({ onChange, opcoesDinamicas, camposDisponiveis =
   };
 
   const handleFiltroChange = (campo: string, valores: string[]) => {
-    console.log("Filtro change:", campo, valores);
+    console.log(`🎛️ Filtro alterado: ${campo} = [${valores.join(', ')}]`);
     setFiltros(prev => ({
       ...prev,
       [campo]: valores
@@ -122,7 +122,10 @@ export default function Filtros({ onChange, opcoesDinamicas, camposDisponiveis =
   };
 
   useEffect(() => {
-    console.log("Filtros atualizados:", filtros);
+    const filtrosAtivos = Object.keys(filtros).filter(k => filtros[k].length > 0);
+    if (filtrosAtivos.length > 0) {
+      console.log(`🔧 Filtros ativos: ${filtrosAtivos.map(k => `${k}: [${filtros[k].join(', ')}]`).join(' | ')}`);
+    }
     onChange(filtros);
   }, [filtros, onChange]);
 
@@ -134,7 +137,6 @@ export default function Filtros({ onChange, opcoesDinamicas, camposDisponiveis =
     if (!opcoes || opcoes.length === 0) return null;
     
     const valoresSelecionados = filtros[campo] || [];
-    console.log(`Renderizando filtro ${campo}:`, { opcoes, valoresSelecionados });
     
     return (
       <MultiSelect
@@ -158,16 +160,16 @@ export default function Filtros({ onChange, opcoesDinamicas, camposDisponiveis =
         </button>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 w-full">
-        <div className="relative w-full">{renderFiltro('BolsaFamilia', condicoesArquivos.BolsaFamilia, "Bolsa Família")}</div>
-        <div className="relative w-full">{renderFiltro('SituacaoPobreza', condicoesArquivos.SituacaoPobreza, "Situação de Pobreza")}</div>
-        <div className="relative w-full">{renderFiltro('SetorEconomico', condicoesArquivos.SetorEconomico, "Setor Econômico")}</div>
-        <div className="relative w-full">{renderFiltro('Sexo', condicoesArquivos.Sexo, "Sexo")}</div>
-        <div className="relative w-full">{renderFiltro('RacaCor', condicoesArquivos.RacaCor, "Raça/Cor")}</div>
-        <div className="relative w-full">{renderFiltro('GrauInstrucao', condicoesArquivos.GrauInstrucao, "Grau de Instrução")}</div>
-        <div className="relative w-full">{renderFiltro('FaixaEtaria', condicoesArquivos.FaixaEtaria, "Faixa Etária")}</div>
-        <div className="relative w-full">{renderFiltro('CadUnico', condicoesArquivos.CadUnico, "CadÚnico")}</div>
-        <div className="relative w-full">{renderFiltro('UF', condicoesArquivos.UF, "UF")}</div>
-        <div className="relative w-full">{renderFiltro('Ano', condicoesArquivos.Ano, "Ano")}</div>
+        <div className="relative w-full">{renderFiltro('bolsaFamilia', condicoesArquivos.bolsaFamilia, "Bolsa Família")}</div>
+        <div className="relative w-full">{renderFiltro('situacaoPobreza', condicoesArquivos.situacaoPobreza, "Situação de Pobreza")}</div>
+        <div className="relative w-full">{renderFiltro('setorEconomico', condicoesArquivos.setorEconomico, "Setor Econômico")}</div>
+        <div className="relative w-full">{renderFiltro('sexo', condicoesArquivos.sexo, "Sexo")}</div>
+        <div className="relative w-full">{renderFiltro('racaCor', condicoesArquivos.racaCor, "Raça/Cor")}</div>
+        <div className="relative w-full">{renderFiltro('grauInstrucao', condicoesArquivos.grauInstrucao, "Grau de Instrução")}</div>
+        <div className="relative w-full">{renderFiltro('faixaEtaria', condicoesArquivos.faixaEtaria, "Faixa Etária")}</div>
+        <div className="relative w-full">{renderFiltro('cadUnico', condicoesArquivos.cadUnico, "CadÚnico")}</div>
+        <div className="relative w-full">{renderFiltro('uf', condicoesArquivos.uf, "UF")}</div>
+        <div className="relative w-full">{renderFiltro('ano', condicoesArquivos.ano, "Ano")}</div>
       </div>
     </div>
   );

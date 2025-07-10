@@ -25,21 +25,33 @@ interface Dado {
 }
 
 function filtrarDados(dados: Dado[], filtros: { [key: string]: string[] }): Dado[] {
-  return dados.filter((item) => {
+  const resultado = dados.filter((item) => {
+    // Função para normalizar valores (remover acentos, converter para maiúsculo, etc)
+    const normalizar = (valor: any) => {
+      if (valor === undefined || valor === null) return "";
+      return String(valor).normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
+    };
+
     // Para cada filtro, se não estiver vazio e não for 'Todos', filtra
-    const check = (campo: string | undefined, valores: string[]) => {
+    const check = (campo: any, valores: string[]) => {
       if (!valores || valores.length === 0 || valores.includes("Todos")) return true;
-      return campo && valores.includes(campo);
+      const campoNorm = normalizar(campo);
+      const valoresNorm = valores.map(normalizar);
+      return campoNorm && valoresNorm.includes(campoNorm);
     };
     
     // Verificar todos os filtros aplicados
     for (const [campo, valores] of Object.entries(filtros)) {
-      if (!check(item[campo], valores)) {
+      const valorItem = item[campo];
+      if (!check(valorItem, valores)) {
         return false;
       }
     }
     return true;
   });
+  
+  console.log(`📊 Filtros aplicados: ${Object.keys(filtros).filter(k => filtros[k].length > 0).join(', ') || 'Nenhum'} | Dados: ${dados.length} → ${resultado.length}`);
+  return resultado;
 }
 
 export default function App() {
@@ -70,20 +82,19 @@ export default function App() {
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      console.log("Iniciando busca de dados do Firebase...");
+      console.log("🔄 Carregando dados do Firebase...");
       try {
         let q = collection(db, "dados");
         const snapshot = await getDocs(q);
         const docs = snapshot.docs.map(doc => doc.data() as Dado);
-        console.log("Dados carregados:", docs);
-        console.log("Quantidade de documentos:", docs.length);
+        
         setDados(docs);
+        console.log(`✅ Dados carregados: ${docs.length} registros`);
         
         // Descobrir campos existentes dinamicamente
         if (docs.length > 0) {
           const primeiroDoc = docs[0];
           const camposExistentes = Object.keys(primeiroDoc);
-          console.log("Campos encontrados no banco:", camposExistentes);
           setCamposDisponiveis(camposExistentes);
           
           // Gerar opções dinâmicas para todos os campos
@@ -103,9 +114,11 @@ export default function App() {
             uf: opcoesGeradas.uf || [],
             ...opcoesGeradas
           });
+          
+          console.log(`🎯 Campos disponíveis: ${camposExistentes.join(', ')}`);
         }
       } catch (error) {
-        console.error("Erro ao carregar dados:", error);
+        console.error("❌ Erro ao carregar dados:", error);
       }
       setLoading(false);
     }
@@ -153,6 +166,7 @@ export default function App() {
                 <thead>
                   <tr>
                     <th className="px-4 text-black">Categorias</th>
+                    <th className="px-4 text-black">UF</th>
                     <th className="px-4 text-black">Admissões</th>
                     <th className="px-4 text-black">Desligamentos</th>
                     <th className="px-4 text-black">Saldo</th>
@@ -160,11 +174,12 @@ export default function App() {
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan={4} className="py-8 text-black/70">Carregando...</td></tr>
+                    <tr><td colSpan={5} className="py-8 text-black/70">Carregando...</td></tr>
                   ) : dadosFiltrados.length > 0 ? (
                     dadosFiltrados.map((item, idx) => (
                       <tr key={idx} className="border-b border-black/20 last:border-0">
                         <td className="px-4 py-2 text-black font-medium">{item.categoria}</td>
+                        <td className="px-4 py-2 text-black font-medium">{item.uf}</td>
                         <td className="px-4 py-2 text-black font-medium">{item.admissoes}</td>
                         <td className="px-4 py-2 text-black font-medium">{item.desligamentos}</td>
                         <td className="px-4 py-2 text-black font-medium">{item.saldo}</td>
@@ -172,7 +187,7 @@ export default function App() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={4} className="py-8 text-black/70">Nenhum dado encontrado</td>
+                      <td colSpan={5} className="py-8 text-black/70">Nenhum dado encontrado</td>
                     </tr>
                   )}
                 </tbody>

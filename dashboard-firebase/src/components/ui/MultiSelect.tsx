@@ -39,8 +39,6 @@ export default function MultiSelect({
     onChange(selected.filter((v) => v !== value));
   };
 
-  console.log("MultiSelect render - selected:", selected, "options:", options);
-
   return (
     <div className="relative min-w-[180px] max-w-[220px] w-auto text-sm">
       <div
