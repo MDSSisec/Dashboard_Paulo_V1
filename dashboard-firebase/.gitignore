@@ -101,6 +101,9 @@ temp/
 firebase-debug.log
 firestore-debug.log
 ui-debug.log
+*-firebase-adminsdk-*.json
+**/firebase-adminsdk-*.json
+**/*-firebase-adminsdk-*.json
 
 # Local development
 *.local
