@@ -2,6 +2,9 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+import Filtros from "@/components/Filtros";
+import TabelaDados from "@/components/table";
+
 
 const Table = React.forwardRef<
   HTMLTableElement,
