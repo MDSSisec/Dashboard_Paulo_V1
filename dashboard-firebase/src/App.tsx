@@ -1,5 +1,5 @@
 import Filtros from "@/components/ui/Filtros";
-import { useEffect, useState, useRef, useMemo, useLayoutEffect } from "react";
+import { useEffect, useState, useRef, useMemo, useLayoutEffect, useCallback } from "react";
 import { collection, getDocs, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import * as XLSX from "xlsx";
@@ -307,16 +307,10 @@ function filtrarDados(dados: Dado[], filtros: { [key: string]: string[] }): Dado
   );
 
   if (chavesFiltroAtivas.length === 0) {
-    console.log(`Nenhum filtro ativo - mostrando todos os ${dados.length} dados`);
     return dados;
   }
 
-  console.log("=== INÍCIO DA FILTRAGEM ===");
-  console.log("Chaves de filtro ativas:", chavesFiltroAtivas);
-  console.log("Filtros:", filtros);
-  console.log("Total de dados:", dados.length);
-
-  const resultado = dados.filter((item, index) => {
+  return dados.filter((item) => {
     for (const campo of chavesFiltroAtivas) {
       const valores = filtros[campo];
       const valorItem = item[campo];
@@ -328,21 +322,12 @@ function filtrarDados(dados: Dado[], filtros: { [key: string]: string[] }): Dado
       const match = valoresFiltroStr.includes(valorItemStr);
       
       if (!match) {
-        console.log(`❌ Item ${index + 1} REJEITADO - Campo: ${campo}, Valor: "${valorItemStr}", Filtro: [${valoresFiltroStr.join(', ')}]`);
         return false;
       }
     }
     
-    console.log(`✅ Item ${index + 1} ACEITO`);
     return true;
   });
-  
-  console.log(`\n=== RESULTADO DA FILTRAGEM ===`);
-  console.log(`Dados originais: ${dados.length}`);
-  console.log(`Dados filtrados: ${resultado.length}`);
-  console.log("=== FIM DA FILTRAGEM ===\n");
-  
-  return resultado;
 }
 
 // Função para formatar números para melhor leitura
@@ -362,18 +347,12 @@ export default function App() {
     const buscarDados = async () => {
       try {
         setLoading(true);
-        console.log("Carregando dados do Firebase...");
         
         // Verificar se o Firebase está configurado
         const isFirebaseConfigured = import.meta.env.VITE_FIREBASE_API_KEY && 
                                     import.meta.env.VITE_FIREBASE_PROJECT_ID;
         
-        console.log("Firebase configurado?", isFirebaseConfigured);
-        console.log("VITE_FIREBASE_API_KEY:", import.meta.env.VITE_FIREBASE_API_KEY ? "SIM" : "NÃO");
-        console.log("VITE_FIREBASE_PROJECT_ID:", import.meta.env.VITE_FIREBASE_PROJECT_ID ? "SIM" : "NÃO");
-        
         if (!isFirebaseConfigured) {
-          console.log("Usando dados mock para demonstração...");
           
           // Usar dados mock
           const dadosCarregados = dadosMock;
@@ -430,23 +409,12 @@ export default function App() {
             opcoesFinais.setorEconomico = ["Serviço", "Comércio", "Indústria", "Construção", "Agronegócio"];
           }
 
-          console.log(`Dados mock carregados: ${dadosCarregados.length} registros`);
-          console.log("Opções de filtro disponíveis:", opcoesFinais);
-          console.log("CadÚnico disponível:", opcoesFinais.cadUnico);
-          console.log("Grau de Instrução disponível:", opcoesFinais.grauInstrucao);
-          console.log("Faixa Etária disponível:", opcoesFinais.faixaEtaria);
-          console.log("Todos os valores CadÚnico nos dados:", dadosCarregados.map(d => d.cadUnico));
-          console.log("Valores únicos de CadÚnico:", [...new Set(dadosCarregados.map(d => d.cadUnico))]);
-          console.log("Todos os valores Grau de Instrução nos dados:", dadosCarregados.map(d => d.grauInstrucao));
-          console.log("Todos os valores Faixa Etária nos dados:", dadosCarregados.map(d => d.faixaEtaria));
-          
           // Garantir que todos os dados tenham cadUnico preenchido
           dadosCarregados.forEach((d) => {
             if (!d.cadUnico || d.cadUnico === "" || d.cadUnico === undefined) {
               d.cadUnico = "NAO";
             }
           });
-          console.log("Após garantir cadUnico - Valores únicos:", [...new Set(dadosCarregados.map(d => d.cadUnico))]);
           
           setDados(dadosCarregados);
           setOpcoesDinamicas(opcoesFinais);
@@ -491,23 +459,17 @@ export default function App() {
           opcoesFinais.cadUnico.sort();
         }
 
-        console.log(`Dados carregados: ${dadosCarregados.length} registros`);
-        console.log("Opções de filtro disponíveis:", opcoesFinais);
-        console.log("CadÚnico disponível:", opcoesFinais.cadUnico);
-        
         // Garantir que todos os dados tenham cadUnico preenchido
         dadosCarregados.forEach((d) => {
           if (!d.cadUnico || d.cadUnico === "" || d.cadUnico === undefined) {
             d.cadUnico = "NAO";
           }
         });
-        console.log("Após garantir cadUnico - Valores únicos:", [...new Set(dadosCarregados.map(d => d.cadUnico))]);
         
         setDados(dadosCarregados);
         setOpcoesDinamicas(opcoesFinais);
       } catch (error) {
         console.error("Erro ao buscar dados do Firestore: ", error);
-        console.log("Usando dados mock devido ao erro...");
         
         // Em caso de erro, usar dados mock
         const dadosCarregados = dadosMock;
@@ -574,31 +536,13 @@ export default function App() {
   }, []); // Array de dependências vazio para rodar apenas uma vez
 
   // Função para atualizar filtros
-  const handleFiltrosChange = (novosFiltros: { [key: string]: string[] }) => {
-    console.log("Filtros alterados:", novosFiltros);
-    
-    // Log específico para CadÚnico
-    if (novosFiltros.cadUnico && novosFiltros.cadUnico.length > 0) {
-      console.log("CadÚnico selecionado:", novosFiltros.cadUnico);
-      console.log("Isso deve filtrar os dados por CadÚnico");
-    }
-    
-    // Log específico para faixa etária
-    if (novosFiltros.faixaEtaria && novosFiltros.faixaEtaria.length > 0) {
-      console.log("Faixa Etária selecionada:", novosFiltros.faixaEtaria);
-      console.log("Isso deve criar uma nova coluna 'Faixa Etária' na tabela");
-    }
-    
+  const handleFiltrosChange = useCallback((novosFiltros: { [key: string]: string[] }) => {
     setFiltros(novosFiltros);
-  };
+  }, []);
 
   // Dados filtrados
   const dadosFiltrados = useMemo(() => {
-    console.log("Recalculando dados filtrados...");
-    console.log("Dados totais:", dados.length);
-    console.log("Filtros ativos:", filtros);
     const resultado = filtrarDados(dados, filtros);
-    console.log("Dados após filtro:", resultado.length);
     return resultado;
   }, [dados, filtros]);
 
@@ -615,17 +559,12 @@ export default function App() {
     // Combinar categorias base com filtros ativos, removendo duplicatas
     const todasCategorias = [...new Set([...categoriasBase, ...categoriasFiltros])];
     
-    console.log("Categorias para tabela:", todasCategorias);
-    console.log("Filtros ativos que viraram colunas:", categoriasFiltros);
-    
     return todasCategorias;
   }, [filtros]);
 
   // Dados cruzados - agora agrupa por todas as categorias incluindo filtros
   const dadosCruzados = useMemo(() => {
-    console.log("Agrupando dados cruzados...");
     const resultado = agruparDados(dadosFiltrados, categoriasParaTabela, ["admissoes", "desligamentos", "saldo"]);
-    console.log(`Dados cruzados gerados: ${resultado.length} linhas`);
     return resultado;
   }, [dadosFiltrados, categoriasParaTabela]);
 
