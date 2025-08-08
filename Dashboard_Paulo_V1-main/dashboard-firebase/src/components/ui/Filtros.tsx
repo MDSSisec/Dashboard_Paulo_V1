@@ -1,7 +1,8 @@
 // src/components/Filtros.tsx
 import { useState, useEffect } from "react";
 import MultiSelect from "./MultiSelect";
-import { valoresPadrao } from "@/constants/filters";
+import { VALORES_PADRAO } from "@/constants/filters";
+import { LABELS, STATUS } from "@/constants/ui";
 
 export type FiltrosProps = {
   onChange: (valores: any) => void;
@@ -56,7 +57,7 @@ export default function Filtros({ onChange, opcoesDinamicas, camposDisponiveis =
       console.log(`Opções dinâmicas para ${campo}:`, opcoes);
     } else {
       // Valores padrão caso não haja dados dinâmicos
-      opcoes = valoresPadrao[campo] || [];
+      opcoes = VALORES_PADRAO[campo] || [];
     }
     
     if (!opcoes || opcoes.length === 0) {
@@ -93,7 +94,7 @@ export default function Filtros({ onChange, opcoesDinamicas, camposDisponiveis =
           className="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-lg text-white font-semibold transition-colors shadow-lg"
           onClick={resetar}
         >
-          RESETAR FILTROS
+          {LABELS.FILTRAR} - RESETAR
         </button>
       </div>
       

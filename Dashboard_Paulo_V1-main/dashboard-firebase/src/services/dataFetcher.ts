@@ -1,7 +1,8 @@
 import axios from "axios";
 import { Dado } from "@/types/Dado";
-import { categoriasFixas, subcategorias, valoresPadrao } from "@/constants/filters";
+import { CATEGORIAS_FIXAS_FILTROS, SUBCATEGORIAS, VALORES_PADRAO } from "@/constants/filters";
 import { mockDados } from "@/data/mockDados";
+import { URLS_COMPLETAS } from "@/constants/routes";
 
 // Interface para opções dinâmicas
 export interface OpcoesDinamicas {
@@ -21,7 +22,7 @@ export const buscarDadosIniciais = async (): Promise<{
   try {
     console.log("Carregando dados iniciais do PostgreSQL...");
     
-    const response = await axios.get("http://localhost:3001/dados");
+    const response = await axios.get(URLS_COMPLETAS.DADOS_INICIAIS);
     const dadosPostgres = response.data;
     
     // Converter dados do PostgreSQL para o formato esperado
@@ -47,7 +48,7 @@ export const buscarDadosIniciais = async (): Promise<{
 
     dadosConvertidos.forEach((docData) => {
       // Popula as opções de filtro dinamicamente
-      for (const key of categoriasFixas) {
+      for (const key of CATEGORIAS_FIXAS_FILTROS) {
         if (docData[key] !== undefined && docData[key] !== null) {
           if (!novasOpcoes[key]) {
             novasOpcoes[key] = new Set<string>();
@@ -65,19 +66,19 @@ export const buscarDadosIniciais = async (): Promise<{
     }
     
     // Usar as subcategorias definidas para garantir que todas as opções estejam disponíveis
-    Object.keys(subcategorias).forEach(categoria => {
-      if (subcategorias[categoria]) {
-        opcoesFinais[categoria] = subcategorias[categoria];
+    Object.keys(SUBCATEGORIAS).forEach(categoria => {
+      if (SUBCATEGORIAS[categoria]) {
+        opcoesFinais[categoria] = SUBCATEGORIAS[categoria];
       }
     });
     
     // Adicionar UF e Ano se não existirem
     if (!opcoesFinais.uf) {
-      opcoesFinais.uf = valoresPadrao.uf;
+      opcoesFinais.uf = VALORES_PADRAO.uf;
     }
     
     if (!opcoesFinais.ano) {
-      opcoesFinais.ano = valoresPadrao.ano;
+      opcoesFinais.ano = VALORES_PADRAO.ano;
     }
 
     console.log(`Dados PostgreSQL carregados: ${dadosConvertidos.length} registros`);
@@ -94,7 +95,7 @@ export const buscarDadosIniciais = async (): Promise<{
     // Retornar dados mock em caso de erro
     return {
       dados: mockDados,
-      opcoesDinamicas: valoresPadrao
+      opcoesDinamicas: VALORES_PADRAO
     };
   }
 };
@@ -121,7 +122,7 @@ export const buscarDadosFiltrados = async (filtros: Filtros): Promise<Dado[]> =>
     
     console.log("Query params:", queryParams.toString());
     
-    const url = `http://localhost:3001/dados-agrupados?${queryParams.toString()}`;
+    const url = `${URLS_COMPLETAS.DADOS_AGRUPADOS}?${queryParams.toString()}`;
     console.log("URL da requisição:", url);
     
     const response = await axios.get(url);

@@ -2,6 +2,8 @@ import { useEffect, useState, useRef, useMemo, useLayoutEffect } from "react";
 import Filtros from "@/components/ui/Filtros";
 import { Dado } from "@/types/Dado";
 import { nomesFiltros } from "@/constants/filters";
+import { CATEGORIAS_BASE } from "@/constants/categories";
+import { LABELS, STATUS } from "@/constants/ui";
 import { buscarDadosIniciais, buscarDadosFiltrados, Filtros as FiltrosType } from "@/services/dataFetcher";
 import { exportarParaExcel, formatarNumero } from "@/services/exportExcel";
 
@@ -36,7 +38,7 @@ export default function App() {
 
   // Categorias para tabela - agora inclui filtros selecionados como colunas
   const categoriasParaTabela = useMemo(() => {
-    const categoriasBase = ['uf', 'ano'];
+    const categoriasBase = CATEGORIAS_BASE;
 
     // Adicionar categorias dos filtros ativos
     const categoriasFiltros = Object.keys(filtros).filter(
@@ -169,7 +171,7 @@ export default function App() {
             exportarParaExcel(dadosCruzados, categoriasParaTabela);
           }}
         >
-          Exportar para Excel
+          {LABELS.EXPORTAR}
         </button>
         
         {/* Botão de teste */}

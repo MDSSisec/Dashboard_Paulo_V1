@@ -1,18 +1,20 @@
 // Constantes para filtros do dashboard
+import { 
+  CATEGORIAS_FIXAS,
+  BOLSA_FAMILIA,
+  SITUACAO_POBREZA,
+  SETOR_ECONOMICO,
+  SEXO,
+  RACA_COR,
+  GRAU_INSTRUCAO,
+  FAIXA_ETARIA,
+  CADUNICO,
+  ESTADOS_BRASILEIROS,
+  ANOS_DISPONIVEIS
+} from "./categories";
 
 // Categorias fixas para filtros
-export const categoriasFixas = [
-  "bolsaFamilia",
-  "situacaoPobreza", 
-  "setorEconomico",
-  "sexo",
-  "racaCor",
-  "grauInstrucao",
-  "faixaEtaria",
-  "cadUnico",
-  "uf",
-  "ano"
-];
+export const CATEGORIAS_FIXAS_FILTROS = CATEGORIAS_FIXAS;
 
 // Mapeamento de nomes amigáveis para os filtros
 export const nomesFiltros: Record<string, string> = {
@@ -29,47 +31,27 @@ export const nomesFiltros: Record<string, string> = {
 };
 
 // Mapeamento das subcategorias para cada categoria
-export const subcategorias: Record<string, string[]> = {
-  bolsaFamilia: ["SIM", "NAO"],
-  situacaoPobreza: ["SIM", "NAO"],
-  setorEconomico: ["Agronegócio", "Comércio", "Construção", "Indústria", "Serviço"],
-  sexo: ["Homem", "Mulher", "Não Identificado"],
-  racaCor: ["Amarelo", "Branco", "Indígena", "Não Identificado", "Não Informado", "Pardo", "Preto"],
-  grauInstrucao: [
-    "5º completo fundamental", "6º a 9º fundamental", "Analfabeto", "Até 5º incompleto",
-    "Doutorado", "Fundamental completo", "Médio completo", "Médio incompleto",
-    "Mestrado", "Pós-graduação completa", "Superior completo", "Superior incompleto", "Não identificado"
-  ],
-  faixaEtaria: [
-    "18 a 24 anos", "25 a 29 anos", "30 a 39 anos", "40 a 49 anos", "50 a 59 anos",
-    "60 a 64 anos", "Acima de 65 anos", "Até 17 anos", "Data de nascimento nula", "Data de nascimento inválida"
-  ],
-  cadUnico: ["SIM", "NAO", "NÃO"] // Incluir ambas as variações
+export const SUBCATEGORIAS: Record<string, string[]> = {
+  bolsaFamilia: BOLSA_FAMILIA,
+  situacaoPobreza: SITUACAO_POBREZA,
+  setorEconomico: SETOR_ECONOMICO,
+  sexo: SEXO,
+  racaCor: RACA_COR,
+  grauInstrucao: GRAU_INSTRUCAO,
+  faixaEtaria: FAIXA_ETARIA,
+  cadUnico: CADUNICO // Incluir ambas as variações
 };
 
 // Valores padrão para cada categoria
-export const valoresPadrao: Record<string, string[]> = {
-  bolsaFamilia: ["SIM", "NAO"],
-  situacaoPobreza: ["SIM", "NAO"],
-  setorEconomico: ["Agronegócio", "Comércio", "Construção", "Indústria", "Serviço"],
-  sexo: ["Homem", "Mulher", "Não Identificado"],
-  racaCor: ["Amarelo", "Branco", "Indígena", "Não Identificado", "Não Informado", "Pardo", "Preto"],
-  grauInstrucao: [
-    "5º completo fundamental", "6º a 9º fundamental", "Analfabeto", "Até 5º incompleto",
-    "Doutorado", "Fundamental completo", "Médio completo", "Médio incompleto",
-    "Mestrado", "Pós-graduação completa", "Superior completo", "Superior incompleto", "Não identificado"
-  ],
-  faixaEtaria: [
-    "18 a 24 anos", "25 a 29 anos", "30 a 39 anos", "40 a 49 anos", "50 a 59 anos",
-    "60 a 64 anos", "Acima de 65 anos", "Até 17 anos", "Data de nascimento nula", "Data de nascimento inválida"
-  ],
-  cadUnico: ["SIM", "NAO"],
-  uf: [
-    "Acre", "Alagoas", "Amapá", "Amazonas", "Bahia", "Ceará", "Distrito Federal", 
-    "Espírito Santo", "Goiás", "Maranhão", "Mato Grosso", "Mato Grosso do Sul", 
-    "Minas Gerais", "Pará", "Paraíba", "Paraná", "Pernambuco", "Piauí", 
-    "Rio de Janeiro", "Rio Grande do Norte", "Rio Grande do Sul", "Rondônia", 
-    "Roraima", "Santa Catarina", "São Paulo", "Sergipe", "Tocantins"
-  ],
-  ano: ["2021", "2022", "2023"]
+export const VALORES_PADRAO: Record<string, string[]> = {
+  bolsaFamilia: BOLSA_FAMILIA,
+  situacaoPobreza: SITUACAO_POBREZA,
+  setorEconomico: SETOR_ECONOMICO,
+  sexo: SEXO,
+  racaCor: RACA_COR,
+  grauInstrucao: GRAU_INSTRUCAO,
+  faixaEtaria: FAIXA_ETARIA,
+  cadUnico: BOLSA_FAMILIA, // Usando BOLSA_FAMILIA para SIM/NAO
+  uf: ESTADOS_BRASILEIROS,
+  ano: ANOS_DISPONIVEIS
 };

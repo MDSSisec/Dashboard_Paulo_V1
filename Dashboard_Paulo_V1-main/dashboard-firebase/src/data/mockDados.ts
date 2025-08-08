@@ -1,4 +1,14 @@
 import { Dado } from "@/types/Dado";
+import { 
+  ESTADOS_MOCK,
+  SETOR_ECONOMICO,
+  FAIXA_ETARIA,
+  GRAUS_INSTRUCAO_SIMPLES,
+  RACAS_CORES_SIMPLES,
+  SEXO,
+  ANOS_DISPONIVEIS,
+  BOLSA_FAMILIA
+} from "@/constants/categories";
 
 // Dados mock para desenvolvimento e testes
 export const mockDados: Dado[] = [
@@ -91,23 +101,15 @@ export const mockDados: Dado[] = [
 
 // Função para gerar dados mock aleatórios
 export const gerarDadosMock = (quantidade: number = 50): Dado[] => {
-  const estados = [
-    "São Paulo", "Rio de Janeiro", "Minas Gerais", "Bahia", "Paraná",
-    "Rio Grande do Sul", "Pernambuco", "Ceará", "Pará", "Santa Catarina"
-  ];
-  
-  const setores = ["Indústria", "Serviço", "Comércio", "Construção", "Agronegócio"];
-  const faixasEtarias = [
-    "18 a 24 anos", "25 a 29 anos", "30 a 39 anos", "40 a 49 anos", "50 a 59 anos"
-  ];
-  const grausInstrucao = [
-    "Fundamental incompleto", "Fundamental completo", "Médio incompleto", "Médio completo", "Superior completo"
-  ];
-  const racasCores = ["Branco", "Pardo", "Preto", "Amarelo", "Indígena"];
-  const sexos = ["Homem", "Mulher"];
-  const anos = ["2021", "2022", "2023"];
-  const bolsaFamilia = ["SIM", "NAO"];
-  const cadUnico = ["SIM", "NAO"];
+  const estados = ESTADOS_MOCK;
+  const setores = SETOR_ECONOMICO;
+  const faixasEtarias = FAIXA_ETARIA;
+  const grausInstrucao = GRAUS_INSTRUCAO_SIMPLES;
+  const racasCores = RACAS_CORES_SIMPLES;
+  const sexos = SEXO;
+  const anos = ANOS_DISPONIVEIS;
+  const bolsaFamilia = BOLSA_FAMILIA;
+  const cadUnico = BOLSA_FAMILIA;
 
   const dados: Dado[] = [];
 
