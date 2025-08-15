@@ -1,14 +1,14 @@
-import { useEffect, useState, useRef, useMemo, useLayoutEffect } from "react";
-import Filtros from "@/components/ui/Filtros";
-import { Dado } from "@/types/Dado";
-import { nomesFiltros } from "@/constants/filters";
-import { CATEGORIAS_BASE } from "@/constants/categories";
-import { LABELS, STATUS } from "@/constants/ui";
-import { buscarDadosIniciais, buscarDadosFiltrados, Filtros as FiltrosType } from "@/services/dataFetcher";
-import { exportarParaExcel, formatarNumero } from "@/services/exportExcel";
+import React, { useEffect, useState, useRef, useMemo, useLayoutEffect } from "react";
+import Filtros from "../components/filtros/Filtros";
+import { Dado } from "../types/Dado";
+import { nomesFiltros } from "../constants/filters";
+import { CATEGORIAS_BASE } from "../constants/categories";
+import { LABELS, STATUS } from "../constants/ui";
+import { buscarDadosIniciais, buscarDadosFiltrados, Filtros as FiltrosType } from "../services/dataFetcher";
+import { exportarParaExcel, formatarNumero } from "../services/exportExcel";
 
 export default function App() {
-  const [filtros, setFiltros] = useState<FiltrosType>({});
+  const [filtros, setFiltros] = useState<FiltrosType>({} as FiltrosType);
   const [dados, setDados] = useState<Dado[]>([]);
   const [loading, setLoading] = useState(true);
   const [opcoesDinamicas, setOpcoesDinamicas] = useState<Record<string, string[]>>({});
@@ -53,23 +53,34 @@ export default function App() {
 
   // EFEITO PARA BUSCAR DADOS FILTRADOS QUANDO OS FILTROS MUDAM
   useEffect(() => {
-    const carregarDadosFiltrados = async () => {
+    // Verificar se há filtros ativos
+    const filtrosAtivos = Object.keys(filtros).filter(k => 
+      filtros[k] && filtros[k].length > 0 && !filtros[k].includes("Todos")
+    );
+    
+    // Se não há filtros ativos, não fazer requisição
+    if (filtrosAtivos.length === 0) {
+      return;
+    }
+    
+    // Usar um timeout para evitar múltiplas requisições rápidas (debounce)
+    const timeoutId = setTimeout(async () => {
       try {
         setLoading(true);
         const dadosFiltrados = await buscarDadosFiltrados(filtros);
         setDados(dadosFiltrados);
       } catch (error) {
-        console.error("Erro ao buscar dados filtrados:", error);
+        console.error("❌ Erro ao buscar dados filtrados:", error);
         setDados([]);
       } finally {
         setLoading(false);
       }
-    };
+    }, 200); // Reduzido para 200ms para ser mais responsivo
 
-    carregarDadosFiltrados();
+    return () => clearTimeout(timeoutId);
   }, [filtros]);
 
-  // Função para atualizar filtros
+  // Função para atualizar filtros - sem useCallback para evitar re-renders
   const handleFiltrosChange = (novosFiltros: FiltrosType) => {
     console.log("=== FILTROS ALTERADOS ===");
     console.log("Filtros anteriores:", filtros);
@@ -88,14 +99,12 @@ export default function App() {
 
   // Dados cruzados - agora usa os dados já agrupados pelo PostgreSQL
   const dadosCruzados = useMemo(() => {
-    console.log("=== DADOS CRUZADOS ===");
-    console.log("Dados recebidos:", dados);
-    console.log("Categorias para tabela:", categoriasParaTabela);
+    if (!dados || dados.length === 0) {
+      return [];
+    }
     
     // Os dados já vêm convertidos do PostgreSQL, só precisamos mapear para o formato da tabela
-    const resultado = dados.map((item, index) => {
-      console.log(`Processando item ${index}:`, item);
-      
+    const resultado = dados.map((item) => {
       const itemFormatado: any = {};
 
       // Mapear campos baseados nas categorias da tabela
@@ -123,11 +132,9 @@ export default function App() {
       itemFormatado.desligamentos = item.desligamentos || 0;
       itemFormatado.saldo = item.saldo || 0;
 
-      console.log(`Item formatado ${index}:`, itemFormatado);
       return itemFormatado;
     });
-
-    console.log("Resultado final:", resultado);
+    
     return resultado;
   }, [dados, categoriasParaTabela]);
 
@@ -158,7 +165,7 @@ export default function App() {
       tabelaNode.removeEventListener('scroll', tabelaScrollHandler);
       scrollTopNode.removeEventListener('scroll', scrollTopScrollHandler);
     };
-  }, [dadosCruzados]);
+  }, [dadosCruzados.length]); // Só executar quando o número de dados mudar
 
   return (
     <div className="bg-black min-h-screen">
@@ -265,7 +272,7 @@ export default function App() {
             <div style={{ height: 1 }} />
           </div>
           
-          <div ref={tabelaRef} className="w-full overflow-x-auto">
+          <div ref={tabelaRef} className="w-full overflow-x-auto max-h-[600px] overflow-y-auto">
             {dadosCruzados.length > 0 ? (
               <table className="min-w-full text-lg text-center">
                 <thead>
@@ -293,9 +300,7 @@ export default function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {loading ? (
-                    <tr><td colSpan={categoriasParaTabela.length + 3} className="py-8 text-black/70">Carregando...</td></tr>
-                  ) : dadosCruzados.length > 0 ? (
+                  {dadosCruzados.length > 0 ? (
                     dadosCruzados.map((item, idx) => (
                       <tr key={idx} className="border-b border-black/20 last:border-0">
                         {categoriasParaTabela.map(cat => {
@@ -315,7 +320,9 @@ export default function App() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={categoriasParaTabela.length + 3} className="py-8 text-black/70">Nenhum dado encontrado</td>
+                      <td colSpan={categoriasParaTabela.length + 3} className="py-8 text-black/70">
+                        {loading ? 'Carregando...' : 'Nenhum dado encontrado'}
+                      </td>
                     </tr>
                   )}
                 </tbody>

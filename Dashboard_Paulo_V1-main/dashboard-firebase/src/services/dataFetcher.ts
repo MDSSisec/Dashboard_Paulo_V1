@@ -128,10 +128,23 @@ export const buscarDadosFiltrados = async (filtros: Filtros): Promise<Dado[]> =>
     const response = await axios.get(url);
     const dadosAgrupados = response.data;
     
-    console.log(`Dados recebidos: ${dadosAgrupados.length} registros`);
-    
-    // Converter dados do PostgreSQL para o formato esperado
-    const dadosConvertidos: Dado[] = dadosAgrupados.map((item: any, index: number) => {
+         console.log(`Dados recebidos: ${dadosAgrupados.length} registros`);
+     
+     // Verificar anos únicos nos dados recebidos
+     const anosUnicos = [...new Set(dadosAgrupados.map((item: any) => item["Ano"]))].sort();
+     console.log(`🔍 Anos únicos nos dados:`, anosUnicos);
+     
+     // Verificar UFs únicas nos dados recebidos
+     const ufsUnicas = [...new Set(dadosAgrupados.map((item: any) => item["UF"]))].sort();
+     console.log(`🔍 UFs únicas nos dados:`, ufsUnicas);
+     
+     // Converter dados do PostgreSQL para o formato esperado (SIMPLIFICADO)
+     const dadosConvertidos: Dado[] = dadosAgrupados.map((item: any, index: number) => {
+       // Log apenas os primeiros 3 itens para debug
+       if (index < 3) {
+         console.log(`🔍 Item ${index} do backend:`, item);
+       }
+      
       const dadoConvertido: Dado = {
         estado: item["UF"] || "Não Informado",
         categoria: item["Setor Econômico"] || "Não Informado",
@@ -150,46 +163,10 @@ export const buscarDadosFiltrados = async (filtros: Filtros): Promise<Dado[]> =>
         cadUnico: item["CadÚnico"] || "Não Informado"
       };
       
-      // Adicionar campos dinâmicos baseados nas categorias da tabela
-      const categoriasAtuais = ['uf', 'ano', ...filtrosAtivos];
-      
-      // Mapeamento correto para acessar os dados
-      const nomesFiltros: Record<string, string> = {
-        uf: "UF",
-        ano: "Ano",
-        bolsaFamilia: "Bolsa Família",
-        situacaoPobreza: "Situação de Pobreza",
-        setorEconomico: "Setor Econômico",
-        sexo: "Sexo",
-        racaCor: "Raça/Cor",
-        grauInstrucao: "Grau de Instrução",
-        faixaEtaria: "Faixa Etária",
-        cadUnico: "CadÚnico"
-      };
-      
-      categoriasAtuais.forEach(cat => {
-        const nomeColuna = nomesFiltros[cat];
-        
-        if (nomeColuna) {
-          if (cat === 'cadUnico') {
-            // Tratamento especial para CadÚnico
-            const valorCadUnico = item[nomeColuna];
-            if (valorCadUnico === "NAO" || valorCadUnico === "NÃO") {
-              dadoConvertido[cat] = "NÃO";
-            } else if (valorCadUnico === "SIM") {
-              dadoConvertido[cat] = "SIM";
-            } else {
-              dadoConvertido[cat] = valorCadUnico || "Não Informado";
-            }
-          } else if (cat === 'ano') {
-            dadoConvertido[cat] = item[nomeColuna]?.toString() || "Não Informado";
-          } else {
-            dadoConvertido[cat] = item[nomeColuna] || "Não Informado";
-          }
-        } else {
-          dadoConvertido[cat] = item[cat] || "Não Informado";
-        }
-      });
+      // Log apenas os primeiros 3 itens convertidos
+      if (index < 3) {
+        console.log(`✅ Item ${index} convertido:`, dadoConvertido);
+      }
       
       return dadoConvertido;
     });
