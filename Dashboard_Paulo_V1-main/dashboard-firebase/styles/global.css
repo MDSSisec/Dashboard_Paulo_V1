@@ -66,3 +66,27 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .filtros-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .filtro-item {
+    min-width: 180px;
+    max-width: 220px;
+    width: 100%;
+  }
+  
+  .multiselect-container {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .multiselect-container:hover {
+    transform: translateY(-1px);
+  }
+}

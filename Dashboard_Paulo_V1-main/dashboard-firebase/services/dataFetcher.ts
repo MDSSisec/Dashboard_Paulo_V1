@@ -1,8 +1,8 @@
 import axios from "axios";
-import { Dado } from "@/types/Dado";
-import { CATEGORIAS_FIXAS_FILTROS, SUBCATEGORIAS, VALORES_PADRAO } from "@/constants/filters";
-import { mockDados } from "@/data/mockDados";
-import { URLS_COMPLETAS } from "@/constants/routes";
+import { Dado } from "../types/Dado";
+import { CATEGORIAS_FIXAS_FILTROS, SUBCATEGORIAS, VALORES_PADRAO } from "../constants/filters";
+import { mockDados } from "../data/mockDados";
+import { URLS_COMPLETAS } from "../constants/routes";
 
 // Interface para opções dinâmicas
 export interface OpcoesDinamicas {
@@ -14,6 +14,42 @@ export interface Filtros {
   [key: string]: string[];
 }
 
+// Função para buscar opções de filtros dinamicamente do PostgreSQL
+export const buscarOpcoesFiltros = async (): Promise<OpcoesDinamicas> => {
+  try {
+    console.log("🔍 Carregando opções de filtros do PostgreSQL...");
+    
+    const response = await axios.get(URLS_COMPLETAS.OPCOES_FILTROS, {
+      timeout: 10000, // 10 segundos de timeout
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (response.data.success) {
+      const opcoesDoBanco = response.data.opcoes;
+      console.log("✅ Opções de filtros carregadas do banco:", Object.keys(opcoesDoBanco));
+      
+      // Log detalhado de cada categoria
+      Object.entries(opcoesDoBanco).forEach(([categoria, valores]) => {
+        console.log(`📊 ${categoria}: ${(valores as string[]).length} opções`);
+        console.log(`   Valores: [${(valores as string[]).slice(0, 5).join(', ')}${(valores as string[]).length > 5 ? '...' : ''}]`);
+      });
+      
+      return opcoesDoBanco;
+    } else {
+      throw new Error("Resposta do servidor não indica sucesso");
+    }
+  } catch (error) {
+    console.error("❌ Erro ao buscar opções de filtros do PostgreSQL: ", error);
+    console.log("🔄 Usando valores padrão como fallback...");
+    
+    // Retornar valores padrão em caso de erro
+    return VALORES_PADRAO;
+  }
+};
+
 // Função para buscar dados iniciais do PostgreSQL
 export const buscarDadosIniciais = async (): Promise<{
   dados: Dado[];
@@ -21,6 +57,9 @@ export const buscarDadosIniciais = async (): Promise<{
 }> => {
   try {
     console.log("Carregando dados iniciais do PostgreSQL...");
+    
+    // Buscar opções de filtros dinamicamente primeiro
+    const opcoesDinamicas = await buscarOpcoesFiltros();
     
     const response = await axios.get(URLS_COMPLETAS.DADOS_INICIAIS);
     const dadosPostgres = response.data;
@@ -44,49 +83,12 @@ export const buscarDadosIniciais = async (): Promise<{
       cadUnico: item["CadÚnico"] || "Não Informado"
     }));
 
-    const novasOpcoes: Record<string, Set<string>> = {};
-
-    dadosConvertidos.forEach((docData) => {
-      // Popula as opções de filtro dinamicamente
-      for (const key of CATEGORIAS_FIXAS_FILTROS) {
-        if (docData[key] !== undefined && docData[key] !== null) {
-          if (!novasOpcoes[key]) {
-            novasOpcoes[key] = new Set<string>();
-          }
-          novasOpcoes[key].add(String(docData[key]));
-        }
-      }
-    });
-
-    const opcoesFinais: OpcoesDinamicas = {};
-    for (const key in novasOpcoes) {
-      opcoesFinais[key] = Array.from(novasOpcoes[key]).sort((a, b) => 
-        a.localeCompare(b, undefined, { numeric: true })
-      );
-    }
-    
-    // Usar as subcategorias definidas para garantir que todas as opções estejam disponíveis
-    Object.keys(SUBCATEGORIAS).forEach(categoria => {
-      if (SUBCATEGORIAS[categoria]) {
-        opcoesFinais[categoria] = SUBCATEGORIAS[categoria];
-      }
-    });
-    
-    // Adicionar UF e Ano se não existirem
-    if (!opcoesFinais.uf) {
-      opcoesFinais.uf = VALORES_PADRAO.uf;
-    }
-    
-    if (!opcoesFinais.ano) {
-      opcoesFinais.ano = VALORES_PADRAO.ano;
-    }
-
     console.log(`Dados PostgreSQL carregados: ${dadosConvertidos.length} registros`);
-    console.log("Opções de filtro disponíveis:", opcoesFinais);
+    console.log("Opções de filtro disponíveis:", opcoesDinamicas);
     
     return {
       dados: dadosConvertidos,
-      opcoesDinamicas: opcoesFinais
+      opcoesDinamicas: opcoesDinamicas
     };
   } catch (error) {
     console.error("Erro ao buscar dados iniciais do PostgreSQL: ", error);
@@ -100,7 +102,7 @@ export const buscarDadosIniciais = async (): Promise<{
   }
 };
 
-// Função para buscar dados filtrados
+// Função para buscar dados filtrados (CORRIGIDA - SUBCATEGORIAS)
 export const buscarDadosFiltrados = async (filtros: Filtros): Promise<Dado[]> => {
   try {
     // Verificar se há filtros ativos
@@ -112,79 +114,193 @@ export const buscarDadosFiltrados = async (filtros: Filtros): Promise<Dado[]> =>
     console.log("Filtros ativos:", filtrosAtivos);
     console.log("Filtros completos:", filtros);
     
-    // Construir query parameters
-    const queryParams = new URLSearchParams();
-    Object.entries(filtros).forEach(([campo, valores]) => {
-      if (valores && valores.length > 0 && !valores.includes("Todos")) {
-        queryParams.append(campo, valores.join(','));
+         // Preparar dados para envio via POST - GARANTIR ARRAYS
+     const body = {
+       bolsaFamilia: filtros.bolsaFamilia,
+       situacaoPobreza: filtros.situacaoPobreza,
+       setorEconomico: filtros.setorEconomico,
+       sexo: filtros.sexo,
+       racaCor: filtros.racaCor,
+       grauInstrucao: filtros.grauInstrucao,
+       faixaEtaria: filtros.faixaEtaria,
+       cadUnico: filtros.cadUnico,
+       uf: filtros.uf,
+       ano: filtros.ano
+     };
+     
+     // Garantir que cada campo é null OU array (nunca "A,B" string)
+     Object.keys(body).forEach(k => {
+       const v = (body as any)[k];
+       if (v && !Array.isArray(v)) (body as any)[k] = [v];
+       if (Array.isArray(v) && v.length === 0) (body as any)[k] = null;
+       // Filtrar valores vazios e "Todos"
+       if (Array.isArray(v) && v.length > 0) {
+         const valoresValidos = v.filter(val => val && val !== "Todos" && val !== "" && val !== "null");
+         (body as any)[k] = valoresValidos.length > 0 ? valoresValidos : null;
+       }
+     });
+    
+         console.log("🔗 Dados dos filtros enviados:", body);
+     
+     // Log detalhado de cada filtro enviado
+     Object.entries(body).forEach(([campo, valores]) => {
+       if (valores) {
+         console.log(`📤 Enviando ${campo}: ${valores.length} valores - [${valores.join(', ')}]`);
+       } else {
+         console.log(`📤 Enviando ${campo}: NULL (sem restrição)`);
+       }
+     });
+     
+     // DEBUG TEMPORÁRIO - Testar rota de debug
+     try {
+       const resp = await fetch("/api/debug-filtros", {
+         method: "POST", 
+         headers: {"Content-Type": "application/json"},
+         body: JSON.stringify(body)   // exatamente o objeto que você manda ao /dados
+       });
+       const debugResult = await resp.json();
+       console.log("🔍 [DEBUG] Resultado da rota de debug:", debugResult);
+     } catch (debugError) {
+       console.log("⚠️ [DEBUG] Erro na rota de debug:", debugError.message);
+     }
+    
+    // Usar POST para enviar arrays complexos
+    const response = await axios.post(URLS_COMPLETAS.DADOS_AGRUPADOS, body, {
+      timeout: 15000, // 15 segundos de timeout para filtros
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       }
     });
     
-    console.log("Query params:", queryParams.toString());
+    console.log("📊 [FRONTEND] ===== RESPOSTA DA API =====");
+    console.log("📊 [FRONTEND] Status da resposta:", response.status);
     
-    const url = `${URLS_COMPLETAS.DADOS_AGRUPADOS}?${queryParams.toString()}`;
-    console.log("URL da requisição:", url);
+    // Verificar se a resposta tem a estrutura correta
+    if (response.data && response.data.ok && response.data.rows) {
+      const dadosAgrupados = response.data.rows;
+      console.log("📊 [FRONTEND] Total de registros recebidos:", dadosAgrupados.length);
+      
+      if (dadosAgrupados.length > 0) {
+        console.log("📊 [FRONTEND] Primeira linha recebida:", JSON.stringify(dadosAgrupados[0], null, 2));
+        console.log("📊 [FRONTEND] Campos da primeira linha:", Object.keys(dadosAgrupados[0]));
+      } else {
+        console.log("📊 [FRONTEND] Nenhum registro recebido da API");
+      }
+    } else {
+      console.log("📊 [FRONTEND] Resposta não tem estrutura esperada:", response.data);
+      return [];
+    }
     
-    const response = await axios.get(url);
-    const dadosAgrupados = response.data;
+    console.log("📊 [FRONTEND] ===== FIM DA RESPOSTA =====");
     
+    const dadosAgrupados = response.data.rows || [];
     console.log(`Dados recebidos: ${dadosAgrupados.length} registros`);
     
     // Converter dados do PostgreSQL para o formato esperado
     const dadosConvertidos: Dado[] = dadosAgrupados.map((item: any, index: number) => {
       const dadoConvertido: Dado = {
-        estado: item["UF"] || "Não Informado",
-        categoria: item["Setor Econômico"] || "Não Informado",
+        estado: item["uf"] || "Não Informado",
+        categoria: item["setor_economico"] || "Não Informado",
         admissoes: item["admissoes"] || 0,
         desligamentos: item["desligamentos"] || 0,
         saldo: item["saldo"] || 0,
-        faixaEtaria: item["Faixa Etária"] || "Não Informado",
-        grauInstrucao: item["Grau de Instrução"] || "Não Informado",
-        racaCor: item["Raça/Cor"] || "Não Informado",
-        setorEconomico: item["Setor Econômico"] || "Não Informado",
-        situacaoPobreza: item["Situação de Pobreza"] || "Não Informado",
-        ano: item["Ano"]?.toString() || "Não Informado",
-        uf: item["UF"] || "Não Informado",
-        sexo: item["Sexo"] || "Não Informado",
-        bolsaFamilia: item["Bolsa Família"] || "Não Informado",
-        cadUnico: item["CadÚnico"] || "Não Informado"
+        faixaEtaria: item["faixa_etaria"] || "Não Informado",
+        grauInstrucao: item["grau_instrucao"] || "Não Informado",
+        racaCor: item["raca_cor"] || "Não Informado",
+        setorEconomico: item["setor_economico"] || "Não Informado",
+        situacaoPobreza: item["situacao_pobreza"] || "Não Informado",
+        ano: item["ano"]?.toString() || "Não Informado",
+        uf: item["uf"] || "Não Informado",
+        sexo: item["sexo"] || "Não Informado",
+        bolsaFamilia: item["bolsa_familia"] || "Não Informado",
+        cadUnico: item["cad_unico"] || "Não Informado"
       };
       
       // Adicionar campos dinâmicos baseados nas categorias da tabela
       const categoriasAtuais = ['uf', 'ano', ...filtrosAtivos];
       
-      // Mapeamento correto para acessar os dados
+      // Mapeamento correto para acessar os dados (backend retorna snake_case)
       const nomesFiltros: Record<string, string> = {
-        uf: "UF",
-        ano: "Ano",
-        bolsaFamilia: "Bolsa Família",
-        situacaoPobreza: "Situação de Pobreza",
-        setorEconomico: "Setor Econômico",
-        sexo: "Sexo",
-        racaCor: "Raça/Cor",
-        grauInstrucao: "Grau de Instrução",
-        faixaEtaria: "Faixa Etária",
-        cadUnico: "CadÚnico"
+        uf: "uf",
+        ano: "ano",
+        bolsaFamilia: "bolsa_familia",
+        situacaoPobreza: "situacao_pobreza",
+        setorEconomico: "setor_economico",
+        sexo: "sexo",
+        racaCor: "raca_cor",
+        grauInstrucao: "grau_instrucao",
+        faixaEtaria: "faixa_etaria",
+        cadUnico: "cad_unico"
+      };
+      
+      // Função para normalizar valores de volta para exibição
+      const normalizarParaExibicao = (valor: any, campo: string) => {
+        if (!valor) return "Não Informado";
+        
+        const valorStr = String(valor).trim();
+        
+                 // Mapeamento específico para cada campo
+         const mapeamentoExibicao: Record<string, Record<string, string>> = {
+           faixaEtaria: {
+             "18 A 24 ANOS": "18 a 24 anos",
+             "25 A 29 ANOS": "25 a 29 anos",
+             "30 A 39 ANOS": "30 a 39 anos",
+             "40 A 49 ANOS": "40 a 49 anos",
+             "50 A 59 ANOS": "50 a 59 anos",
+             "60 A 64 ANOS": "60 a 64 anos",
+             "ACIMA DE 65 ANOS": "Acima de 65 anos",
+             "ATE 17 ANOS": "Até 17 anos",
+             "DATA DE NASCIMENTO NULA": "Data de nascimento nula",
+             "DATA DE NASCIMENTO INVALIDA": "Data de nascimento inválida",
+             "Não Informado": "Não Informado"
+           },
+           cadUnico: {
+             "NAO": "NÃO",
+             "SIM": "SIM",
+             "Não Informado": "Não Informado"
+           },
+           bolsaFamilia: {
+             "NAO": "NÃO",
+             "SIM": "SIM",
+             "Não Informado": "Não Informado"
+           },
+           situacaoPobreza: {
+             "NAO": "NÃO",
+             "SIM": "SIM",
+             "Não Informado": "Não Informado"
+           },
+           sexo: {
+             "Não Informado": "Não Informado"
+           },
+           racaCor: {
+             "Não Informado": "Não Informado"
+           },
+           setorEconomico: {
+             "Não Informado": "Não Informado"
+           },
+           grauInstrucao: {
+             "Não Informado": "Não Informado"
+           }
+         };
+        
+        const mapeamento = mapeamentoExibicao[campo];
+        if (mapeamento && mapeamento[valorStr]) {
+          return mapeamento[valorStr];
+        }
+        
+        return valorStr;
       };
       
       categoriasAtuais.forEach(cat => {
         const nomeColuna = nomesFiltros[cat];
         
         if (nomeColuna) {
-          if (cat === 'cadUnico') {
-            // Tratamento especial para CadÚnico
-            const valorCadUnico = item[nomeColuna];
-            if (valorCadUnico === "NAO" || valorCadUnico === "NÃO") {
-              dadoConvertido[cat] = "NÃO";
-            } else if (valorCadUnico === "SIM") {
-              dadoConvertido[cat] = "SIM";
-            } else {
-              dadoConvertido[cat] = valorCadUnico || "Não Informado";
-            }
-          } else if (cat === 'ano') {
+          if (cat === 'ano') {
             dadoConvertido[cat] = item[nomeColuna]?.toString() || "Não Informado";
           } else {
-            dadoConvertido[cat] = item[nomeColuna] || "Não Informado";
+            const valorBruto = item[nomeColuna];
+            dadoConvertido[cat] = normalizarParaExibicao(valorBruto, cat);
           }
         } else {
           dadoConvertido[cat] = item[cat] || "Não Informado";
@@ -194,8 +310,16 @@ export const buscarDadosFiltrados = async (filtros: Filtros): Promise<Dado[]> =>
       return dadoConvertido;
     });
     
-    console.log("Todos os dados convertidos:", dadosConvertidos);
-    return dadosConvertidos;
+         console.log("Todos os dados convertidos:", dadosConvertidos);
+     console.log(`✅ Total final: ${dadosConvertidos.length} registros (SEM LIMITAÇÃO)`);
+     
+     // LOG ADICIONAL - Verificar se não há limitações
+     console.log("🔍 [VERIFICAÇÃO] Dados recebidos do backend:", dadosAgrupados.length);
+     console.log("🔍 [VERIFICAÇÃO] Dados convertidos para frontend:", dadosConvertidos.length);
+     console.log("🔍 [VERIFICAÇÃO] Primeiro registro:", dadosConvertidos[0]);
+     console.log("🔍 [VERIFICAÇÃO] Último registro:", dadosConvertidos[dadosConvertidos.length - 1]);
+     
+     return dadosConvertidos;
     
   } catch (error) {
     console.error("Erro ao buscar dados:", error);

@@ -250,7 +250,7 @@ export default function App() {
             <h2 className="text-2xl font-bold text-black mb-2">Dados Analisados</h2>
             <p className="text-black/70 text-sm mb-2">
               {dadosCruzados.length > 0 
-                ? `Mostrando ${dadosCruzados.length} resultado${dadosCruzados.length > 1 ? 's' : ''}`
+                ? `Mostrando ${dadosCruzados.length} resultado${dadosCruzados.length > 1 ? 's' : ''} (SEM LIMITAÇÕES)`
                 : 'Nenhum resultado encontrado'
               }
             </p>

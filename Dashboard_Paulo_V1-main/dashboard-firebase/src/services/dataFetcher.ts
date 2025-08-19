@@ -1,8 +1,8 @@
 import axios from "axios";
-import { Dado } from "@/types/Dado";
-import { CATEGORIAS_FIXAS_FILTROS, SUBCATEGORIAS, VALORES_PADRAO } from "@/constants/filters";
-import { mockDados } from "@/data/mockDados";
-import { URLS_COMPLETAS } from "@/constants/routes";
+import { Dado } from "../types/Dado";
+import { CATEGORIAS_FIXAS_FILTROS, SUBCATEGORIAS, VALORES_PADRAO } from "../constants/filters";
+import { mockDados } from "../data/mockDados";
+import { URLS_COMPLETAS } from "../constants/routes";
 
 // Interface para opções dinâmicas
 export interface OpcoesDinamicas {
@@ -20,29 +20,65 @@ export const buscarDadosIniciais = async (): Promise<{
   opcoesDinamicas: OpcoesDinamicas;
 }> => {
   try {
-    console.log("Carregando dados iniciais do PostgreSQL...");
+    console.log("🔄 Carregando dados iniciais do PostgreSQL...");
     
-    const response = await axios.get(URLS_COMPLETAS.DADOS_INICIAIS);
+    const response = await axios.get(URLS_COMPLETAS.DADOS_INICIAIS, {
+      timeout: 10000, // 10 segundos de timeout
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+    
     const dadosPostgres = response.data;
     
+    if (!Array.isArray(dadosPostgres)) {
+      throw new Error("Dados recebidos não são um array válido");
+    }
+    
+    console.log(`📊 Dados PostgreSQL recebidos: ${dadosPostgres.length} registros`);
+    
     // Converter dados do PostgreSQL para o formato esperado
-    const dadosConvertidos: Dado[] = dadosPostgres.map((item: any) => ({
-      estado: item["UF"] || "Não Informado",
-      categoria: item["Setor Econômico"] || "Não Informado",
-      admissoes: item["Admissoes"] || 0,
-      desligamentos: item["Desligamentos"] || 0,
-      saldo: item["Saldo"] || 0,
-      faixaEtaria: item["Faixa Etária"] || "Não Informado",
-      grauInstrucao: item["Grau de Instrução"] || "Não Informado",
-      racaCor: item["Raça/Cor"] || "Não Informado",
-      setorEconomico: item["Setor Econômico"] || "Não Informado",
-      situacaoPobreza: item["Situação de Pobreza"] || "Não Informado",
-      ano: item["Ano"]?.toString() || "Não Informado",
-      uf: item["UF"] || "Não Informado",
-      sexo: item["Sexo"] || "Não Informado",
-      bolsaFamilia: item["Bolsa Família"] || "Não Informado",
-      cadUnico: item["CadÚnico"] || "Não Informado"
-    }));
+    const dadosConvertidos: Dado[] = dadosPostgres.map((item: any, index: number) => {
+      try {
+        return {
+          estado: item["UF"] || "Não Informado",
+          categoria: item["Setor Econômico"] || "Não Informado",
+          admissoes: parseInt(item["Admissoes"]) || 0,
+          desligamentos: parseInt(item["Desligamentos"]) || 0,
+          saldo: parseInt(item["Saldo"]) || 0,
+          faixaEtaria: item["Faixa Etária"] || "Não Informado",
+          grauInstrucao: item["Grau de Instrução"] || "Não Informado",
+          racaCor: item["Raça/Cor"] || "Não Informado",
+          setorEconomico: item["Setor Econômico"] || "Não Informado",
+          situacaoPobreza: item["Situação de Pobreza"] || "Não Informado",
+          ano: item["Ano"]?.toString() || "Não Informado",
+          uf: item["UF"] || "Não Informado",
+          sexo: item["Sexo"] || "Não Informado",
+          bolsaFamilia: item["Bolsa Família"] || "Não Informado",
+          cadUnico: item["CadÚnico"] || "Não Informado"
+        };
+      } catch (error) {
+        console.error(`❌ Erro ao converter item ${index}:`, error);
+        return {
+          estado: "Erro",
+          categoria: "Erro",
+          admissoes: 0,
+          desligamentos: 0,
+          saldo: 0,
+          faixaEtaria: "Erro",
+          grauInstrucao: "Erro",
+          racaCor: "Erro",
+          setorEconomico: "Erro",
+          situacaoPobreza: "Erro",
+          ano: "Erro",
+          uf: "Erro",
+          sexo: "Erro",
+          bolsaFamilia: "Erro",
+          cadUnico: "Erro"
+        };
+      }
+    });
 
     const novasOpcoes: Record<string, Set<string>> = {};
 
@@ -65,19 +101,20 @@ export const buscarDadosIniciais = async (): Promise<{
       );
     }
     
-    // Usar as subcategorias definidas para garantir que todas as opções estejam disponíveis
+    // Garantir que cada categoria tenha suas opções corretas
+    // Se não há dados dinâmicos, usar as opções padrão
     Object.keys(SUBCATEGORIAS).forEach(categoria => {
-      if (SUBCATEGORIAS[categoria]) {
+      if (!opcoesFinais[categoria] || opcoesFinais[categoria].length === 0) {
         opcoesFinais[categoria] = SUBCATEGORIAS[categoria];
       }
     });
     
-    // Adicionar UF e Ano se não existirem
-    if (!opcoesFinais.uf) {
+    // Garantir que UF e Ano tenham suas opções corretas
+    if (!opcoesFinais.uf || opcoesFinais.uf.length === 0) {
       opcoesFinais.uf = VALORES_PADRAO.uf;
     }
     
-    if (!opcoesFinais.ano) {
+    if (!opcoesFinais.ano || opcoesFinais.ano.length === 0) {
       opcoesFinais.ano = VALORES_PADRAO.ano;
     }
 
@@ -112,30 +149,34 @@ export const buscarDadosFiltrados = async (filtros: Filtros): Promise<Dado[]> =>
     console.log("Filtros ativos:", filtrosAtivos);
     console.log("Filtros completos:", filtros);
     
-    // Construir query parameters
-    const queryParams = new URLSearchParams();
+    // Preparar dados para envio
+    const dadosFiltros: Record<string, string[]> = {};
     Object.entries(filtros).forEach(([campo, valores]) => {
       if (valores && valores.length > 0 && !valores.includes("Todos")) {
-        queryParams.append(campo, valores.join(','));
+        dadosFiltros[campo] = valores;
       }
     });
     
-    console.log("Query params:", queryParams.toString());
+    console.log("🔗 Dados dos filtros:", dadosFiltros);
     
-    const url = `${URLS_COMPLETAS.DADOS_AGRUPADOS}?${queryParams.toString()}`;
-    console.log("URL da requisição:", url);
-    
-    const response = await axios.get(url);
+    // Usar POST para enviar arrays complexos
+    const response = await axios.post(URLS_COMPLETAS.DADOS_AGRUPADOS, dadosFiltros, {
+      timeout: 15000, // 15 segundos de timeout para filtros
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
     const dadosAgrupados = response.data;
     
          console.log(`Dados recebidos: ${dadosAgrupados.length} registros`);
      
      // Verificar anos únicos nos dados recebidos
-     const anosUnicos = [...new Set(dadosAgrupados.map((item: any) => item["Ano"]))].sort();
+     const anosUnicos = [...new Set(dadosAgrupados.map((item: any) => item["ano"]))].sort();
      console.log(`🔍 Anos únicos nos dados:`, anosUnicos);
      
      // Verificar UFs únicas nos dados recebidos
-     const ufsUnicas = [...new Set(dadosAgrupados.map((item: any) => item["UF"]))].sort();
+     const ufsUnicas = [...new Set(dadosAgrupados.map((item: any) => item["uf"]))].sort();
      console.log(`🔍 UFs únicas nos dados:`, ufsUnicas);
      
      // Converter dados do PostgreSQL para o formato esperado (SIMPLIFICADO)
@@ -146,21 +187,21 @@ export const buscarDadosFiltrados = async (filtros: Filtros): Promise<Dado[]> =>
        }
       
       const dadoConvertido: Dado = {
-        estado: item["UF"] || "Não Informado",
-        categoria: item["Setor Econômico"] || "Não Informado",
+        estado: item["uf"] || "Não Informado",
+        categoria: item["setor_economico"] || "Não Informado",
         admissoes: item["admissoes"] || 0,
         desligamentos: item["desligamentos"] || 0,
         saldo: item["saldo"] || 0,
-        faixaEtaria: item["Faixa Etária"] || "Não Informado",
-        grauInstrucao: item["Grau de Instrução"] || "Não Informado",
-        racaCor: item["Raça/Cor"] || "Não Informado",
-        setorEconomico: item["Setor Econômico"] || "Não Informado",
-        situacaoPobreza: item["Situação de Pobreza"] || "Não Informado",
-        ano: item["Ano"]?.toString() || "Não Informado",
-        uf: item["UF"] || "Não Informado",
-        sexo: item["Sexo"] || "Não Informado",
-        bolsaFamilia: item["Bolsa Família"] || "Não Informado",
-        cadUnico: item["CadÚnico"] || "Não Informado"
+        faixaEtaria: item["faixa_etaria"] || "Não Informado",
+        grauInstrucao: item["grau_instrucao"] || "Não Informado",
+        racaCor: item["raca_cor"] || "Não Informado",
+        setorEconomico: item["setor_economico"] || "Não Informado",
+        situacaoPobreza: item["situacao_pobreza"] || "Não Informado",
+        ano: item["ano"]?.toString() || "Não Informado",
+        uf: item["uf"] || "Não Informado",
+        sexo: item["sexo"] || "Não Informado",
+        bolsaFamilia: item["bolsa_familia"] || "Não Informado",
+        cadUnico: item["cad_unico"] || "Não Informado"
       };
       
       // Log apenas os primeiros 3 itens convertidos

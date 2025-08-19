@@ -1,5 +1,5 @@
 // src/components/Filtros.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import MultiSelect from "./MultiSelect";
 import { VALORES_PADRAO } from "@/constants/filters";
 import { LABELS, STATUS } from "@/constants/ui";
@@ -10,7 +10,7 @@ export type FiltrosProps = {
   camposDisponiveis?: string[]; // Campos reais do banco
 };
 
-export default function Filtros({ onChange, opcoesDinamicas, camposDisponiveis = [] }: FiltrosProps) {
+function Filtros({ onChange, opcoesDinamicas, camposDisponiveis = [] }: FiltrosProps) {
   const [filtros, setFiltros] = useState<{ [key: string]: string[] }>({});
 
   const resetar = () => {
@@ -28,13 +28,13 @@ export default function Filtros({ onChange, opcoesDinamicas, camposDisponiveis =
     console.log("Filtros resetados");
   };
 
-  const handleFiltroChange = (campo: string, valores: string[]) => {
+  const handleFiltroChange = useCallback((campo: string, valores: string[]) => {
     console.log(`Filtro alterado: ${campo} = [${valores.join(', ')}]`);
     setFiltros(prev => ({
       ...prev,
       [campo]: valores
     }));
-  };
+  }, []);
 
   useEffect(() => {
     const filtrosAtivos = Object.keys(filtros).filter(k => filtros[k].length > 0);
@@ -54,7 +54,6 @@ export default function Filtros({ onChange, opcoesDinamicas, camposDisponiveis =
     
     if (opcoesDinamicas[campo] && opcoesDinamicas[campo].length > 0) {
       opcoes = opcoesDinamicas[campo];
-      console.log(`Opções dinâmicas para ${campo}:`, opcoes);
     } else {
       // Valores padrão caso não haja dados dinâmicos
       opcoes = VALORES_PADRAO[campo] || [];
@@ -67,10 +66,12 @@ export default function Filtros({ onChange, opcoesDinamicas, camposDisponiveis =
     
     const valoresSelecionados = filtros[campo] || [];
     
+
+    
     return (
       <div key={campo} className="relative group flex flex-col items-center max-w-[200px] w-full">
         <div className="mb-2 text-center w-full">
-          <label className="text-[10px] font-medium text-gray-300 block">{placeholder}</label>
+          <label className="text-[10px] font-medium text-gray-300 block truncate">{placeholder}</label>
           <div className="text-[8px] text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
             {descricao}
           </div>
@@ -113,3 +114,5 @@ export default function Filtros({ onChange, opcoesDinamicas, camposDisponiveis =
     </div>
   );
 }
+
+export default memo(Filtros);
