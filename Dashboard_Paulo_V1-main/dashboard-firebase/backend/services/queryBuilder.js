@@ -57,7 +57,25 @@ const buildMainQuery = (filtros) => {
   
 
   
-  // Se há filtros, retorna dados agrupados normalmente
+  // Se há filtros ativos, consolida por UF e pelos filtros selecionados
+  const camposParaAgrupar = ['"UF"'];
+  
+  // Adicionar campos dos filtros ativos ao agrupamento
+  if (p1.length > 0) camposParaAgrupar.push('"Bolsa Família"');
+  if (p2.length > 0) camposParaAgrupar.push('"Situação de Pobreza"');
+  if (p3.length > 0) camposParaAgrupar.push('"Setor Econômico"');
+  if (p4.length > 0) camposParaAgrupar.push('"Sexo"');
+  if (p5.length > 0) camposParaAgrupar.push('"Raça/Cor"');
+  if (p6.length > 0) camposParaAgrupar.push('"Grau de Instrução"');
+  if (p7.length > 0) camposParaAgrupar.push('"Faixa Etária"');
+  if (p8.length > 0) camposParaAgrupar.push('"CadÚnico"');
+  if (p10.length > 0) camposParaAgrupar.push('"Ano"');
+  
+  // Se não há filtros específicos além de UF, sempre agrupa por UF
+  if (camposParaAgrupar.length === 1) {
+    camposParaAgrupar.push('"Ano"');
+  }
+  
   const sql = `
     WITH dados AS (
       SELECT
@@ -86,18 +104,22 @@ const buildMainQuery = (filtros) => {
         (COALESCE(array_length($10::int[],1),0)=0 OR "Ano" = ANY($10::int[]))
     )
     SELECT
-      "UF" AS uf, "Ano" AS ano,
-      "CadÚnico" AS cad_unico, "Faixa Etária" AS faixa_etaria, "Grau de Instrução" AS grau_instrucao, "Bolsa Família" AS bolsa_familia,
-      "Situação de Pobreza" AS situacao_pobreza, "Setor Econômico" AS setor_economico, "Raça/Cor" AS raca_cor, "Sexo" AS sexo,
-      SUM("Admissoes") AS admissoes,
-      SUM("Desligamentos") AS desligamentos,
-      SUM("Saldo") AS saldo
+      "UF" AS uf, 
+      "Ano" AS ano,
+      ${p8.length > 0 ? '"CadÚnico"' : "'Todos'"} AS cad_unico, 
+      ${p7.length > 0 ? '"Faixa Etária"' : "'Todos'"} AS faixa_etaria, 
+      ${p6.length > 0 ? '"Grau de Instrução"' : "'Todos'"} AS grau_instrucao, 
+      ${p1.length > 0 ? '"Bolsa Família"' : "'Todos'"} AS bolsa_familia,
+      ${p2.length > 0 ? '"Situação de Pobreza"' : "'Todos'"} AS situacao_pobreza, 
+      ${p3.length > 0 ? '"Setor Econômico"' : "'Todos'"} AS setor_economico, 
+      ${p5.length > 0 ? '"Raça/Cor"' : "'Todos'"} AS raca_cor, 
+      ${p4.length > 0 ? '"Sexo"' : "'Todos'"} AS sexo,
+      COALESCE(SUM("Admissoes"), 0) AS admissoes,
+      COALESCE(SUM("Desligamentos"), 0) AS desligamentos,
+      COALESCE(SUM("Saldo"), 0) AS saldo
     FROM dados
-    GROUP BY
-      "UF", "Ano",
-      "CadÚnico", "Faixa Etária", "Grau de Instrução", "Bolsa Família",
-      "Situação de Pobreza", "Setor Econômico", "Raça/Cor", "Sexo"
-    ORDER BY "UF", "Ano", "CadÚnico", "Faixa Etária";
+    GROUP BY ${camposParaAgrupar.join(', ')}
+    ORDER BY "UF", "Ano";
   `;
   
   return { sql, params };
