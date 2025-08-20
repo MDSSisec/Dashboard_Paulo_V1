@@ -31,10 +31,10 @@ const buildMainQuery = (filtros) => {
   );
   
   if (!filtrosAtivos) {
-    // Se não há filtros, retorna dados consolidados por ano
+    // Se não há filtros, retorna dados consolidados por ano (sem UF)
     const sql = `
       SELECT
-        'Todas as UFs' AS uf, 
+        'Todos os Estados' AS uf, 
         "Ano" AS ano,
         'Todos' AS cad_unico, 
         'Todos' AS faixa_etaria, 
@@ -103,9 +103,28 @@ const buildMainQuery = (filtros) => {
   return { sql, params };
 };
 
-// Query para dados iniciais - retorna dados individuais como estava antes
+// Query para dados iniciais - retorna dados consolidados por ano (sem UF)
 const buildInitialQuery = () => {
-  return 'SELECT * FROM "planilha_dashboard" LIMIT 100';
+  return `
+    SELECT
+      'Todos os Estados' AS uf, 
+      "Ano" AS ano,
+      'Todos' AS cad_unico, 
+      'Todos' AS faixa_etaria, 
+      'Todos' AS grau_instrucao, 
+      'Todos' AS bolsa_familia,
+      'Todos' AS situacao_pobreza, 
+      'Todos' AS setor_economico, 
+      'Todos' AS raca_cor, 
+      'Todos' AS sexo,
+      COALESCE(SUM("Admissoes"), 0) AS admissoes,
+      COALESCE(SUM("Desligamentos"), 0) AS desligamentos,
+      COALESCE(SUM("Saldo"), 0) AS saldo
+    FROM planilha_dashboard
+    WHERE "Ano" IS NOT NULL
+    GROUP BY "Ano"
+    ORDER BY "Ano";
+  `;
 };
 
 module.exports = {

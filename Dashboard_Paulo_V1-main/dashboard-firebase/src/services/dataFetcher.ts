@@ -38,21 +38,21 @@ export const buscarDadosIniciais = async (): Promise<{
     const dadosConvertidos: Dado[] = dadosPostgres.map((item: any, index: number) => {
       try {
         return {
-          estado: item["UF"] || "Não Informado",
-          categoria: item["Setor Econômico"] || "Não Informado",
-          admissoes: parseInt(item["Admissoes"]) || 0,
-          desligamentos: parseInt(item["Desligamentos"]) || 0,
-          saldo: parseInt(item["Saldo"]) || 0,
-          faixaEtaria: item["Faixa Etária"] || "Não Informado",
-          grauInstrucao: item["Grau de Instrução"] || "Não Informado",
-          racaCor: item["Raça/Cor"] || "Não Informado",
-          setorEconomico: item["Setor Econômico"] || "Não Informado",
-          situacaoPobreza: item["Situação de Pobreza"] || "Não Informado",
-          ano: item["Ano"]?.toString() || "Não Informado",
-          uf: item["UF"] || "Não Informado",
-          sexo: item["Sexo"] || "Não Informado",
-          bolsaFamilia: item["Bolsa Família"] || "Não Informado",
-          cadUnico: item["CadÚnico"] || "Não Informado"
+          estado: item["uf"] || item["UF"] || "Não Informado",
+          categoria: item["setor_economico"] || item["Setor Econômico"] || "Não Informado",
+          admissoes: parseInt(item["admissoes"] || item["Admissoes"]) || 0,
+          desligamentos: parseInt(item["desligamentos"] || item["Desligamentos"]) || 0,
+          saldo: parseInt(item["saldo"] || item["Saldo"]) || 0,
+          faixaEtaria: item["faixa_etaria"] || item["Faixa Etária"] || "Não Informado",
+          grauInstrucao: item["grau_instrucao"] || item["Grau de Instrução"] || "Não Informado",
+          racaCor: item["raca_cor"] || item["Raça/Cor"] || "Não Informado",
+          setorEconomico: item["setor_economico"] || item["Setor Econômico"] || "Não Informado",
+          situacaoPobreza: item["situacao_pobreza"] || item["Situação de Pobreza"] || "Não Informado",
+          ano: (item["ano"] || item["Ano"])?.toString() || "Não Informado",
+          uf: item["uf"] || item["UF"] || "Não Informado",
+          sexo: item["sexo"] || item["Sexo"] || "Não Informado",
+          bolsaFamilia: item["bolsa_familia"] || item["Bolsa Família"] || "Não Informado",
+          cadUnico: item["cad_unico"] || item["CadÚnico"] || "Não Informado"
         };
       } catch (error) {
         console.error(`❌ Erro ao converter item ${index}:`, error);
