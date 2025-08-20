@@ -133,10 +133,10 @@ export const buscarDadosFiltrados = async (filtros: Filtros): Promise<Dado[]> =>
        const v = (body as any)[k];
        if (v && !Array.isArray(v)) (body as any)[k] = [v];
        if (Array.isArray(v) && v.length === 0) (body as any)[k] = null;
-       // Filtrar valores vazios e "Todos"
+       // Filtrar valores vazios e "Todos" - CORRIGIDO: manter arrays vazios como [] em vez de null
        if (Array.isArray(v) && v.length > 0) {
          const valoresValidos = v.filter(val => val && val !== "Todos" && val !== "" && val !== "null");
-         (body as any)[k] = valoresValidos.length > 0 ? valoresValidos : null;
+         (body as any)[k] = valoresValidos.length > 0 ? valoresValidos : [];
        }
      });
     

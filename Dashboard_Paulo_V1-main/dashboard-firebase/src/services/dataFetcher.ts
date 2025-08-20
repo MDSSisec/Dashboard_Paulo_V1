@@ -14,12 +14,53 @@ export interface Filtros {
   [key: string]: string[];
 }
 
+// Função para buscar opções de filtros dinamicamente do PostgreSQL
+export const buscarOpcoesFiltros = async (): Promise<OpcoesDinamicas> => {
+  try {
+    console.log("🔍 Carregando opções de filtros do PostgreSQL...");
+    
+    const response = await axios.get(URLS_COMPLETAS.OPCOES_FILTROS, {
+      timeout: 10000, // 10 segundos de timeout
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (response.data.success) {
+      const opcoesDoBanco = response.data.opcoes;
+      console.log("✅ Opções de filtros carregadas do banco:", Object.keys(opcoesDoBanco));
+      
+      // Log detalhado de cada categoria
+      Object.entries(opcoesDoBanco).forEach(([categoria, valores]) => {
+        console.log(`📊 ${categoria}: ${(valores as string[]).length} opções`);
+        console.log(`   Valores: [${(valores as string[]).slice(0, 5).join(', ')}${(valores as string[]).length > 5 ? '...' : ''}]`);
+      });
+      
+      return opcoesDoBanco;
+    } else {
+      throw new Error("Resposta do servidor não indica sucesso");
+    }
+  } catch (error) {
+    console.error("❌ Erro ao buscar opções de filtros do PostgreSQL: ", error);
+    console.log("🔄 Usando valores padrão como fallback...");
+    
+    // Retornar valores padrão em caso de erro
+    return VALORES_PADRAO;
+  }
+};
+
 // Função para buscar dados iniciais do PostgreSQL
 export const buscarDadosIniciais = async (): Promise<{
   dados: Dado[];
   opcoesDinamicas: OpcoesDinamicas;
 }> => {
   try {
+    console.log("Carregando dados iniciais do PostgreSQL...");
+    
+    // Buscar opções de filtros dinamicamente primeiro
+    const opcoesDinamicas = await buscarOpcoesFiltros();
+    
     const response = await axios.get(URLS_COMPLETAS.DADOS_INICIAIS, {
       timeout: 10000, // 10 segundos de timeout
       headers: {
@@ -76,50 +117,16 @@ export const buscarDadosIniciais = async (): Promise<{
       }
     });
 
-    const novasOpcoes: Record<string, Set<string>> = {};
-
-    dadosConvertidos.forEach((docData) => {
-      // Popula as opções de filtro dinamicamente
-      for (const key of CATEGORIAS_FIXAS_FILTROS) {
-        if (docData[key] !== undefined && docData[key] !== null) {
-          if (!novasOpcoes[key]) {
-            novasOpcoes[key] = new Set<string>();
-          }
-          novasOpcoes[key].add(String(docData[key]));
-        }
-      }
-    });
-
-    const opcoesFinais: OpcoesDinamicas = {};
-    for (const key in novasOpcoes) {
-      opcoesFinais[key] = Array.from(novasOpcoes[key]).sort((a, b) => 
-        a.localeCompare(b, undefined, { numeric: true })
-      );
-    }
+    console.log(`Dados PostgreSQL carregados: ${dadosConvertidos.length} registros`);
+    console.log("Opções de filtro disponíveis:", opcoesDinamicas);
     
-    // Garantir que cada categoria tenha suas opções corretas
-    // Se não há dados dinâmicos, usar as opções padrão
-    Object.keys(SUBCATEGORIAS).forEach(categoria => {
-      if (!opcoesFinais[categoria] || opcoesFinais[categoria].length === 0) {
-        opcoesFinais[categoria] = SUBCATEGORIAS[categoria];
-      }
-    });
-    
-    // Garantir que UF e Ano tenham suas opções corretas
-    if (!opcoesFinais.uf || opcoesFinais.uf.length === 0) {
-      opcoesFinais.uf = VALORES_PADRAO.uf;
-    }
-    
-    if (!opcoesFinais.ano || opcoesFinais.ano.length === 0) {
-      opcoesFinais.ano = VALORES_PADRAO.ano;
-    }
-
     return {
       dados: dadosConvertidos,
-      opcoesDinamicas: opcoesFinais
+      opcoesDinamicas: opcoesDinamicas
     };
   } catch (error) {
     console.error("Erro ao buscar dados iniciais do PostgreSQL: ", error);
+    console.log("Usando dados mock como fallback...");
     
     // Retornar dados mock em caso de erro
     return {

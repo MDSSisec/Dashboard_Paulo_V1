@@ -1,5 +1,5 @@
 // src/components/MultiSelect.tsx
-import React, { useState, useEffect, useCallback, memo } from "react";
+import React, { useState, useEffect, useCallback, memo, useRef } from "react";
 
 type MultiSelectProps = {
   options: string[];
@@ -15,12 +15,22 @@ function MultiSelect({
   placeholder = "Selecione...",
 }: MultiSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Fechar dropdown quando clicar fora
+  // Fechar dropdown quando clicar fora ou em outro filtro
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
+      
+      // Se clicou fora de qualquer multi-select, fechar todos
       if (!target.closest('.multi-select-container')) {
+        setIsOpen(false);
+        return;
+      }
+      
+      // Se clicou em outro multi-select, fechar este
+      const clickedContainer = target.closest('.multi-select-container');
+      if (clickedContainer && clickedContainer !== containerRef.current) {
         setIsOpen(false);
       }
     };
@@ -62,7 +72,7 @@ function MultiSelect({
   }, [onChange, selected]);
 
   return (
-    <div className="relative w-full text-sm multi-select-container">
+    <div ref={containerRef} className="relative w-full text-sm multi-select-container">
       <div
         className={`bg-zinc-800 border rounded px-3 py-2 cursor-pointer text-white h-[40px] flex items-center transition-all duration-200 ${
           selected.length > 0 

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, memo } from "react";
 import MultiSelect from "./MultiSelect";
 import { VALORES_PADRAO } from "../../constants/filters";
 import { LABELS, STATUS } from "../../constants/ui";
+import { buildInitialQuery } from "../../backend/services/queryBuilder";
 
 export type FiltrosProps = {
   onChange: (valores: any) => void;
@@ -14,18 +15,24 @@ function Filtros({ onChange, opcoesDinamicas, camposDisponiveis = [] }: FiltrosP
   const [filtros, setFiltros] = useState<{ [key: string]: string[] }>({});
 
   const resetar = () => {
+    // Resetar todos os filtros para arrays vazios
     const novosFiltros: { [key: string]: string[] } = {};
-    // Resetar todos os filtros conhecidos
     const todosCampos = [
       'bolsaFamilia', 'faixaEtaria', 'grauInstrucao', 'racaCor', 
       'setorEconomico', 'sexo', 'cadUnico', 'situacaoPobreza', 
       'ano', 'uf', ...camposDisponiveis
     ];
+    
+    // Definir todos os campos como arrays vazios para limpar as seleções
     todosCampos.forEach(campo => {
       novosFiltros[campo] = [];
     });
+    
     setFiltros(novosFiltros);
-    console.log("Filtros resetados");
+    console.log("🔄 Filtros resetados - todos os campos limpos");
+    
+    // Forçar atualização imediata dos dados
+    onChange(novosFiltros);
   };
 
   const handleFiltroChange = useCallback((campo: string, valores: string[]) => {
@@ -69,6 +76,13 @@ function Filtros({ onChange, opcoesDinamicas, camposDisponiveis = [] }: FiltrosP
     
     const valoresSelecionados = filtros[campo] || [];
     
+    // Debug: verificar se os valores estão sendo passados corretamente
+    console.log(`🔍 Renderizando filtro ${campo}:`, {
+      opcoes: opcoes.length,
+      valoresSelecionados: valoresSelecionados,
+      isVazio: valoresSelecionados.length === 0
+    });
+    
 
     
     return (
@@ -96,7 +110,7 @@ function Filtros({ onChange, opcoesDinamicas, camposDisponiveis = [] }: FiltrosP
       <div className="flex justify-center mb-6">
         <button
           className="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-lg text-white font-semibold transition-colors shadow-lg"
-          onClick={resetar}
+          onClick={buildInitialQuery}
         >
           {LABELS.FILTRAR} - RESETAR
         </button>
