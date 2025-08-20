@@ -6,6 +6,16 @@ import { CATEGORIAS_BASE } from "@/constants/categories";
 import { LABELS, STATUS } from "@/constants/ui";
 import { buscarDadosIniciais, buscarDadosFiltrados, Filtros as FiltrosType } from "@/services/dataFetcher";
 import { exportarParaExcel, formatarNumero } from "@/services/exportExcel";
+import { 
+  Table, 
+  TableHeader, 
+  TableBody, 
+  TableHead, 
+  TableHeadNumeric,
+  TableRow, 
+  TableCell, 
+  TableCellNumeric 
+} from "@/components/ui/table";
 
 export default function App() {
   const [filtros, setFiltros] = useState<FiltrosType>({});
@@ -204,22 +214,22 @@ export default function App() {
         )}
       </div>
       
-      {/* Card roxo (tabela) */}
+      {/* Card da tabela */}
       <div className="w-full flex items-center justify-center max-w-4xl mx-auto mt-8 mb-8">
-        <div className="bg-purple-700 rounded-3xl p-8 shadow-2xl min-w-0 min-h-[150px] w-full flex flex-col items-center justify-center">
+        <div className="bg-white rounded-3xl p-8 shadow-2xl min-w-0 min-h-[150px] w-full flex flex-col items-center justify-center border border-slate-200">
           {/* Cabeçalho da tabela */}
           <div className="mb-4 text-center">
-            <h2 className="text-2xl font-bold text-black mb-2">Dados Analisados</h2>
-            <p className="text-black/70 text-sm mb-2">
+            <h2 className="text-2xl font-bold text-slate-800 mb-2">Dados Analisados</h2>
+            <p className="text-slate-600 text-sm mb-2">
               {dadosCruzados.length > 0 
                 ? `Mostrando ${dadosCruzados.length} resultado${dadosCruzados.length > 1 ? 's' : ''}`
                 : 'Nenhum resultado encontrado'
               }
             </p>
             {Object.keys(filtros).some(k => filtros[k] && filtros[k].length > 0) && (
-              <div className="text-black/60 text-xs bg-purple-100 p-2 rounded-lg">
-                <p className="font-semibold mb-1">🎯 Filtros Ativos:</p>
-                <p>Colunas destacadas em roxo são filtros selecionados que complementam a análise</p>
+              <div className="text-slate-600 text-xs bg-indigo-50 p-3 rounded-lg border border-indigo-200">
+                <p className="font-semibold mb-1 text-indigo-800">🎯 Filtros Ativos:</p>
+                <p>Colunas destacadas em azul são filtros selecionados que complementam a análise</p>
                 <p>Os dados são agrupados por UF, Ano e pelos filtros selecionados</p>
               </div>
             )}
@@ -234,63 +244,69 @@ export default function App() {
             <div style={{ height: 1 }} />
           </div>
           
-          <div ref={tabelaRef} className="w-full overflow-x-auto">
+          <div ref={tabelaRef} className="w-full">
             {dadosCruzados.length > 0 ? (
-              <table className="min-w-full text-lg text-center">
-                <thead>
-                  <tr>
+              <Table>
+                <TableHeader>
+                  <TableRow>
                     {categoriasParaTabela.map(cat => {
                       const isFiltroAtivo = Object.keys(filtros).some(k => 
                         k === cat && filtros[k] && filtros[k].length > 0 && !filtros[k].includes("Todos")
                       );
                       return (
-                        <th key={cat} className={`px-4 text-black ${isFiltroAtivo ? 'bg-purple-200 font-bold' : ''}`}>
+                        <TableHead key={cat} className={isFiltroAtivo ? 'bg-indigo-100' : ''}>
                           <div className="flex items-center justify-center">
                             {nomesFiltros[cat] || cat}
                             {isFiltroAtivo && (
-                              <span className="ml-1 text-xs bg-purple-600 text-white px-1 rounded">
+                              <span className="ml-1 text-xs bg-indigo-600 text-white px-2 py-1 rounded-full">
                                 Filtro
                               </span>
                             )}
                           </div>
-                        </th>
+                        </TableHead>
                       );
                     })}
-                    <th className="px-4 text-black">Admissões</th>
-                    <th className="px-4 text-black">Desligamentos</th>
-                    <th className="px-4 text-black">Saldo</th>
-                  </tr>
-                </thead>
-                <tbody>
+                    <TableHeadNumeric>Admissões</TableHeadNumeric>
+                    <TableHeadNumeric>Desligamentos</TableHeadNumeric>
+                    <TableHeadNumeric>Saldo</TableHeadNumeric>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {loading ? (
-                    <tr><td colSpan={categoriasParaTabela.length + 3} className="py-8 text-black/70">Carregando...</td></tr>
+                    <TableRow>
+                      <TableCell colSpan={categoriasParaTabela.length + 3} className="py-8 text-center text-slate-500">
+                        Carregando...
+                      </TableCell>
+                    </TableRow>
                   ) : dadosCruzados.length > 0 ? (
                     dadosCruzados.map((item, idx) => (
-                      <tr key={idx} className="border-b border-black/20 last:border-0">
+                      <TableRow key={idx}>
                         {categoriasParaTabela.map(cat => {
                           const isFiltroAtivo = Object.keys(filtros).some(k => 
                             k === cat && filtros[k] && filtros[k].length > 0 && !filtros[k].includes("Todos")
                           );
                           return (
-                            <td key={cat} className={`px-4 py-2 text-black font-medium ${isFiltroAtivo ? 'bg-purple-50 border-l-2 border-purple-300' : ''}`}>
+                            <TableCell key={cat} className={isFiltroAtivo ? 'bg-indigo-50 border-l-2 border-indigo-300' : ''}>
                               {item[cat]}
-                            </td>
+                            </TableCell>
                           );
                         })}
-                        <td className="px-4 py-2 text-black font-medium">{formatarNumero(item.admissoes)}</td>
-                        <td className="px-4 py-2 text-black font-medium">{formatarNumero(item.desligamentos)}</td>
-                        <td className="px-4 py-2 text-black font-medium">{formatarNumero(item.saldo)}</td>
-                      </tr>
+                        <TableCellNumeric>{formatarNumero(item.admissoes)}</TableCellNumeric>
+                        <TableCellNumeric>{formatarNumero(item.desligamentos)}</TableCellNumeric>
+                        <TableCellNumeric>{formatarNumero(item.saldo)}</TableCellNumeric>
+                      </TableRow>
                     ))
                   ) : (
-                    <tr>
-                      <td colSpan={categoriasParaTabela.length + 3} className="py-8 text-black/70">Nenhum dado encontrado</td>
-                    </tr>
+                    <TableRow>
+                      <TableCell colSpan={categoriasParaTabela.length + 3} className="py-8 text-center text-slate-500">
+                        Nenhum dado encontrado
+                      </TableCell>
+                    </TableRow>
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             ) : (
-              <div className="flex flex-col items-center justify-center text-white text-lg py-16">
+              <div className="flex flex-col items-center justify-center text-slate-600 text-lg py-16">
                 <span className="text-4xl mb-2">📊</span>
                 Nenhum dado para exibir no momento
               </div>

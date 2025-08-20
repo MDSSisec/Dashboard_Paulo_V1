@@ -2,15 +2,12 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-import Filtros from "@/components/Filtros";
-import TabelaDados from "@/components/table";
-
 
 const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
 >(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto">
+  <div className="relative w-full overflow-auto rounded-xl border border-slate-200 shadow-lg bg-white">
     <table
       ref={ref}
       className={cn("w-full caption-bottom text-sm", className)}
@@ -24,7 +21,7 @@ const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
+  <thead ref={ref} className={cn("bg-gradient-to-r from-slate-50 to-slate-100 [&_tr]:border-b border-slate-200", className)} {...props} />
 ))
 TableHeader.displayName = "TableHeader"
 
@@ -34,7 +31,7 @@ const TableBody = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <tbody
     ref={ref}
-    className={cn("[&_tr:last-child]:border-0", className)}
+    className={cn("[&_tr:last-child]:border-0 [&_tr]:border-b [&_tr]:border-slate-100", className)}
     {...props}
   />
 ))
@@ -62,7 +59,7 @@ const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+      "border-b transition-all duration-200 hover:bg-indigo-50/80 hover:shadow-sm data-[state=selected]:bg-indigo-100 even:bg-slate-50/30",
       className
     )}
     {...props}
@@ -77,7 +74,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      "h-12 px-4 text-left align-middle font-bold text-slate-700 uppercase text-xs tracking-wider [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
       className
     )}
     {...props}
@@ -92,7 +89,7 @@ const TableCell = React.forwardRef<
   <td
     ref={ref}
     className={cn(
-      "p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      "px-4 py-3 align-middle text-slate-800 font-medium [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] whitespace-nowrap",
       className
     )}
     {...props}
@@ -112,13 +109,45 @@ const TableCaption = React.forwardRef<
 ))
 TableCaption.displayName = "TableCaption"
 
+// Componente especializado para células numéricas
+const TableCellNumeric = React.forwardRef<
+  HTMLTableCellElement,
+  React.TdHTMLAttributes<HTMLTableCellElement>
+>(({ className, children, ...props }, ref) => (
+  <TableCell
+    ref={ref}
+    className={cn("text-right font-mono text-sm tabular-nums text-slate-900 font-semibold", className)}
+    {...props}
+  >
+    {children}
+  </TableCell>
+))
+TableCellNumeric.displayName = "TableCellNumeric"
+
+// Componente especializado para cabeçalhos de colunas numéricas
+const TableHeadNumeric = React.forwardRef<
+  HTMLTableCellElement,
+  React.ThHTMLAttributes<HTMLTableCellElement>
+>(({ className, children, ...props }, ref) => (
+  <TableHead
+    ref={ref}
+    className={cn("text-right", className)}
+    {...props}
+  >
+    {children}
+  </TableHead>
+))
+TableHeadNumeric.displayName = "TableHeadNumeric"
+
 export {
   Table,
   TableHeader,
   TableBody,
   TableFooter,
   TableHead,
+  TableHeadNumeric,
   TableRow,
   TableCell,
+  TableCellNumeric,
   TableCaption,
 }
