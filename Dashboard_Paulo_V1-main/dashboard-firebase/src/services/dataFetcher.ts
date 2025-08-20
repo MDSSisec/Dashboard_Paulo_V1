@@ -20,8 +20,6 @@ export const buscarDadosIniciais = async (): Promise<{
   opcoesDinamicas: OpcoesDinamicas;
 }> => {
   try {
-    console.log("🔄 Carregando dados iniciais do PostgreSQL...");
-    
     const response = await axios.get(URLS_COMPLETAS.DADOS_INICIAIS, {
       timeout: 10000, // 10 segundos de timeout
       headers: {
@@ -35,8 +33,6 @@ export const buscarDadosIniciais = async (): Promise<{
     if (!Array.isArray(dadosPostgres)) {
       throw new Error("Dados recebidos não são um array válido");
     }
-    
-    console.log(`📊 Dados PostgreSQL recebidos: ${dadosPostgres.length} registros`);
     
     // Converter dados do PostgreSQL para o formato esperado
     const dadosConvertidos: Dado[] = dadosPostgres.map((item: any, index: number) => {
@@ -118,16 +114,12 @@ export const buscarDadosIniciais = async (): Promise<{
       opcoesFinais.ano = VALORES_PADRAO.ano;
     }
 
-    console.log(`Dados PostgreSQL carregados: ${dadosConvertidos.length} registros`);
-    console.log("Opções de filtro disponíveis:", opcoesFinais);
-    
     return {
       dados: dadosConvertidos,
       opcoesDinamicas: opcoesFinais
     };
   } catch (error) {
     console.error("Erro ao buscar dados iniciais do PostgreSQL: ", error);
-    console.log("Usando dados mock como fallback...");
     
     // Retornar dados mock em caso de erro
     return {
@@ -145,10 +137,6 @@ export const buscarDadosFiltrados = async (filtros: Filtros): Promise<Dado[]> =>
       filtros[k] && filtros[k].length > 0 && !filtros[k].includes("Todos")
     );
     
-    console.log("=== BUSCANDO DADOS ===");
-    console.log("Filtros ativos:", filtrosAtivos);
-    console.log("Filtros completos:", filtros);
-    
     // Preparar dados para envio
     const dadosFiltros: Record<string, string[]> = {};
     Object.entries(filtros).forEach(([campo, valores]) => {
@@ -156,8 +144,6 @@ export const buscarDadosFiltrados = async (filtros: Filtros): Promise<Dado[]> =>
         dadosFiltros[campo] = valores;
       }
     });
-    
-    console.log("🔗 Dados dos filtros:", dadosFiltros);
     
     // Usar POST para enviar arrays complexos
     const response = await axios.post(URLS_COMPLETAS.DADOS_AGRUPADOS, dadosFiltros, {
@@ -167,24 +153,18 @@ export const buscarDadosFiltrados = async (filtros: Filtros): Promise<Dado[]> =>
         'Accept': 'application/json'
       }
     });
-    const dadosAgrupados = response.data;
+    const dadosAgrupados = response.data.rows || response.data;
     
-         console.log(`Dados recebidos: ${dadosAgrupados.length} registros`);
-     
-     // Verificar anos únicos nos dados recebidos
+    if (!dadosAgrupados || !Array.isArray(dadosAgrupados)) {
+      console.error("❌ Dados inválidos recebidos:", response.data);
+      return [];
+    }
+    
+         // Verificar anos únicos nos dados recebidos
      const anosUnicos = [...new Set(dadosAgrupados.map((item: any) => item["ano"]))].sort();
-     console.log(`🔍 Anos únicos nos dados:`, anosUnicos);
      
-     // Verificar UFs únicas nos dados recebidos
-     const ufsUnicas = [...new Set(dadosAgrupados.map((item: any) => item["uf"]))].sort();
-     console.log(`🔍 UFs únicas nos dados:`, ufsUnicas);
-     
-     // Converter dados do PostgreSQL para o formato esperado (SIMPLIFICADO)
+     // Converter dados do PostgreSQL para o formato esperado
      const dadosConvertidos: Dado[] = dadosAgrupados.map((item: any, index: number) => {
-       // Log apenas os primeiros 3 itens para debug
-       if (index < 3) {
-         console.log(`🔍 Item ${index} do backend:`, item);
-       }
       
       const dadoConvertido: Dado = {
         estado: item["uf"] || "Não Informado",
@@ -204,23 +184,18 @@ export const buscarDadosFiltrados = async (filtros: Filtros): Promise<Dado[]> =>
         cadUnico: item["cad_unico"] || "Não Informado"
       };
       
-      // Log apenas os primeiros 3 itens convertidos
-      if (index < 3) {
-        console.log(`✅ Item ${index} convertido:`, dadoConvertido);
-      }
+      
       
       return dadoConvertido;
     });
     
-    console.log("Todos os dados convertidos:", dadosConvertidos);
-    return dadosConvertidos;
+         return dadosConvertidos;
     
   } catch (error) {
     console.error("Erro ao buscar dados:", error);
     if (error && typeof error === 'object' && 'response' in error) {
       console.error("Detalhes do erro:", (error as any).response?.data || (error as any).message);
     }
-    console.log("Usando dados mock como fallback...");
     return mockDados;
   }
 };
@@ -232,14 +207,8 @@ export const filtrarDados = (dados: Dado[], filtros: Filtros): Dado[] => {
   );
 
   if (chavesFiltroAtivas.length === 0) {
-    console.log(`Nenhum filtro ativo - mostrando todos os ${dados.length} dados`);
     return dados;
   }
-
-  console.log("=== INÍCIO DA FILTRAGEM ===");
-  console.log("Chaves de filtro ativas:", chavesFiltroAtivas);
-  console.log("Filtros:", filtros);
-  console.log("Total de dados:", dados.length);
 
   const resultado = dados.filter((item, index) => {
     for (const campo of chavesFiltroAtivas) {
@@ -253,19 +222,12 @@ export const filtrarDados = (dados: Dado[], filtros: Filtros): Dado[] => {
       const match = valoresFiltroStr.includes(valorItemStr);
       
       if (!match) {
-        console.log(`❌ Item ${index + 1} REJEITADO - Campo: ${campo}, Valor: "${valorItemStr}", Filtro: [${valoresFiltroStr.join(', ')}]`);
         return false;
       }
     }
     
-    console.log(`✅ Item ${index + 1} ACEITO`);
     return true;
   });
-  
-  console.log(`\n=== RESULTADO DA FILTRAGEM ===`);
-  console.log(`Dados originais: ${dados.length}`);
-  console.log(`Dados filtrados: ${resultado.length}`);
-  console.log("=== FIM DA FILTRAGEM ===\n");
   
   return resultado;
 };

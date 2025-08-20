@@ -5,13 +5,13 @@ from urllib.parse import quote
 
 # 📌 Configurações do Banco
 db_user = "postgres"
-db_password = "@dM1n090710"  # 
+db_password = "Infra2022@#"  # 
 db_host = "localhost"
 db_port = "5432"
 db_name = "meu_banco_1"
 
 # 📌 Configurações da Planilha
-excel_path = r"C:\Users\Gabrielle Cristine\Downloads\Dashboard_Paulo_V1-main (1)\Dashboard_Paulo_V1-main\banco\banco de dados.xlsx"
+excel_path = r"/Users/lucasfontoura/Documents/lucas/Projetos_React/Dashboard_Paulo_V1/Dashboard_Paulo_V1-main/banco/banco de dados.xlsx"
 sheet_name = "Dados"
 table_name = "planilha_dashboard"
 

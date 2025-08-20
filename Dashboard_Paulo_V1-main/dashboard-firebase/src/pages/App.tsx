@@ -71,30 +71,13 @@ export default function App() {
 
   // Função para atualizar filtros
   const handleFiltrosChange = (novosFiltros: FiltrosType) => {
-    console.log("=== FILTROS ALTERADOS ===");
-    console.log("Filtros anteriores:", filtros);
-    console.log("Novos filtros:", novosFiltros);
-    
-    // Log específico para cada filtro selecionado
-    Object.entries(novosFiltros).forEach(([campo, valores]) => {
-      if (valores && valores.length > 0 && !valores.includes("Todos")) {
-        console.log(`✅ Filtro "${nomesFiltros[campo] || campo}" selecionado:`, valores);
-        console.log(`📊 Este filtro vai aparecer como coluna na tabela`);
-      }
-    });
-    
     setFiltros(novosFiltros);
   };
 
   // Dados cruzados - agora usa os dados já agrupados pelo PostgreSQL
   const dadosCruzados = useMemo(() => {
-    console.log("=== DADOS CRUZADOS ===");
-    console.log("Dados recebidos:", dados);
-    console.log("Categorias para tabela:", categoriasParaTabela);
-    
     // Os dados já vêm convertidos do PostgreSQL, só precisamos mapear para o formato da tabela
     const resultado = dados.map((item, index) => {
-      console.log(`Processando item ${index}:`, item);
       
       const itemFormatado: any = {};
 
@@ -123,11 +106,9 @@ export default function App() {
       itemFormatado.desligamentos = item.desligamentos || 0;
       itemFormatado.saldo = item.saldo || 0;
 
-      console.log(`Item formatado ${index}:`, itemFormatado);
       return itemFormatado;
     });
 
-    console.log("Resultado final:", resultado);
     return resultado;
   }, [dados, categoriasParaTabela]);
 
@@ -174,29 +155,7 @@ export default function App() {
           {LABELS.EXPORTAR}
         </button>
         
-        {/* Botão de teste */}
-        <button
-          className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition ml-2"
-          onClick={() => {
-            console.log("=== TESTE MANUAL ===");
-            console.log("Dados atuais:", dados);
-            console.log("Dados cruzados:", dadosCruzados);
-            console.log("Categorias para tabela:", categoriasParaTabela);
-            console.log("Filtros ativos:", filtros);
-            
-            if (dados.length > 0) {
-              console.log("Primeiro dado:", dados[0]);
-              console.log("Chaves do primeiro dado:", Object.keys(dados[0]));
-            }
-            
-            if (dadosCruzados.length > 0) {
-              console.log("Primeiro dado cruzado:", dadosCruzados[0]);
-              console.log("Chaves do primeiro dado cruzado:", Object.keys(dadosCruzados[0]));
-            }
-          }}
-        >
-          Teste Debug
-        </button>
+
       </div>
       
       {/* Card preto (filtros) */}
