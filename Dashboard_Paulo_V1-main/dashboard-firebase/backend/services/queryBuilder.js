@@ -25,16 +25,17 @@ const buildMainQuery = (filtros) => {
   
   const params = [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10];
   
-  // Verificar se há filtros ativos
-  const filtrosAtivos = [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10].some(arr => arr.length > 0);
+  // Verificar se há filtros ativos (excluindo arrays vazios ou com "Todos")
+  const filtrosAtivos = [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10].some(arr => 
+    arr.length > 0 && !arr.every(item => item === "Todos" || item === "todos")
+  );
   
   if (!filtrosAtivos) {
-    console.log("📊 Nenhum filtro ativo - retornando dados consolidados");
-    // Se não há filtros, retorna dados consolidados (uma linha apenas)
+    // Se não há filtros, retorna dados consolidados por ano
     const sql = `
       SELECT
         'Todas as UFs' AS uf, 
-        'Todos os Anos' AS ano,
+        "Ano" AS ano,
         'Todos' AS cad_unico, 
         'Todos' AS faixa_etaria, 
         'Todos' AS grau_instrucao, 
@@ -46,7 +47,9 @@ const buildMainQuery = (filtros) => {
         SUM("Admissoes") AS admissoes,
         SUM("Desligamentos") AS desligamentos,
         SUM("Saldo") AS saldo
-      FROM planilha_dashboard;
+      FROM planilha_dashboard
+      GROUP BY "Ano"
+      ORDER BY "Ano";
     `;
     
     return { sql, params: [] };
@@ -100,7 +103,7 @@ const buildMainQuery = (filtros) => {
   return { sql, params };
 };
 
-// Query para dados iniciais
+// Query para dados iniciais - retorna dados individuais como estava antes
 const buildInitialQuery = () => {
   return 'SELECT * FROM "planilha_dashboard" LIMIT 100';
 };

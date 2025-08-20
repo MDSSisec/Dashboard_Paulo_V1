@@ -53,6 +53,16 @@ export default function App() {
 
   // EFEITO PARA BUSCAR DADOS FILTRADOS QUANDO OS FILTROS MUDAM
   useEffect(() => {
+    // Verificar se há filtros ativos
+    const filtrosAtivos = Object.keys(filtros).filter(k => 
+      filtros[k] && filtros[k].length > 0 && !filtros[k].includes("Todos")
+    );
+    
+    // Se não há filtros ativos, não fazer requisição
+    if (filtrosAtivos.length === 0) {
+      return;
+    }
+    
     const carregarDadosFiltrados = async () => {
       try {
         setLoading(true);

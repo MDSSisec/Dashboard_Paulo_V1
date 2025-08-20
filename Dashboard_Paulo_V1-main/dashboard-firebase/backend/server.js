@@ -13,11 +13,11 @@ app.use('/', dashboardRoutes);
 
 // Rota de teste para verificar se o servidor está funcionando
 app.get("/health", (req, res) => {
-  res.json({ 
+    res.json({
     status: "OK", 
     message: "Servidor funcionando corretamente",
-    timestamp: new Date().toISOString()
-  });
+      timestamp: new Date().toISOString()
+    });
 });
 
 app.listen(3001, () => {
