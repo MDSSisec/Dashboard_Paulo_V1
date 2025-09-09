@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, memo } from "react";
 import MultiSelect from "./MultiSelect";
 import { VALORES_PADRAO } from "../../constants/filters";
 import { LABELS, STATUS } from "../../constants/ui";
-import { buildInitialQuery } from "../../backend/services/queryBuilder";
+
 
 export type FiltrosProps = {
   onChange: (valores: any) => void;
@@ -28,15 +28,13 @@ function Filtros({ onChange, opcoesDinamicas, camposDisponiveis = [] }: FiltrosP
       novosFiltros[campo] = [];
     });
     
-    setFiltros(novosFiltros);
-    console.log("🔄 Filtros resetados - todos os campos limpos");
-    
-    // Forçar atualização imediata dos dados
-    onChange(novosFiltros);
+         setFiltros(novosFiltros);
+     
+     // Forçar atualização imediata dos dados
+     onChange(novosFiltros);
   };
 
   const handleFiltroChange = useCallback((campo: string, valores: string[]) => {
-    console.log(`Filtro alterado: ${campo} = [${valores.join(', ')}]`);
     setFiltros(prev => ({
       ...prev,
       [campo]: valores
@@ -44,11 +42,12 @@ function Filtros({ onChange, opcoesDinamicas, camposDisponiveis = [] }: FiltrosP
   }, []);
 
   useEffect(() => {
-    const filtrosAtivos = Object.keys(filtros).filter(k => filtros[k].length > 0);
-    if (filtrosAtivos.length > 0) {
-      console.log(`Filtros ativos: ${filtrosAtivos.map(k => `${k}: [${filtros[k].join(', ')}]`).join(' | ')}`);
-    }
-    onChange(filtros);
+    // Debounce para evitar muitas chamadas
+    const timeoutId = setTimeout(() => {
+      onChange(filtros);
+         }, 300); // 300ms de debounce
+
+    return () => clearTimeout(timeoutId);
   }, [filtros, onChange]);
 
   // Helper para adicionar opção 'Todos'
@@ -69,19 +68,13 @@ function Filtros({ onChange, opcoesDinamicas, camposDisponiveis = [] }: FiltrosP
       opcoes = VALORES_PADRAO[campo] || [];
     }
     
-    if (!opcoes || opcoes.length === 0) {
-      console.log(`Nenhuma opção disponível para ${campo}`);
-      return null;
-    }
+         if (!opcoes || opcoes.length === 0) {
+       return null;
+     }
     
     const valoresSelecionados = filtros[campo] || [];
     
-    // Debug: verificar se os valores estão sendo passados corretamente
-    console.log(`🔍 Renderizando filtro ${campo}:`, {
-      opcoes: opcoes.length,
-      valoresSelecionados: valoresSelecionados,
-      isVazio: valoresSelecionados.length === 0
-    });
+
     
 
     
@@ -108,15 +101,15 @@ function Filtros({ onChange, opcoesDinamicas, camposDisponiveis = [] }: FiltrosP
   return (
     <div>
       <div className="flex justify-center mb-6">
-        <button
-          className="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-lg text-white font-semibold transition-colors shadow-lg"
-          onClick={buildInitialQuery}
-        >
-          {LABELS.FILTRAR} - RESETAR
-        </button>
+                 <button
+           className="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-lg text-white font-semibold transition-colors shadow-lg"
+           onClick={resetar}
+         >
+           RESETAR FILTROS
+         </button>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5 gap-4 w-full max-w-7xl mx-auto">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-10 gap-3 w-full max-w-7xl mx-auto">
         {renderFiltro('bolsaFamilia', "Bolsa Família", "Filtrar por beneficiários do programa")}
         {renderFiltro('situacaoPobreza', "Situação de Pobreza", "Filtrar por situação socioeconômica")}
         {renderFiltro('setorEconomico', "Setor Econômico", "Filtrar por área de atuação")}

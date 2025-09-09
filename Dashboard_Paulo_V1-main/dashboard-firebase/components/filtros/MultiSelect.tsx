@@ -95,44 +95,31 @@ function MultiSelect({
                 </button>
               </span>
             ) : (
-              // SEMPRE mostrar 3 elementos: 2 tags + contador ou espaços vazios
-              <>
-                <span
-                  className="bg-purple-600 text-white px-2 py-1 rounded-full text-xs inline-flex items-center gap-1 shadow-lg"
-                >
-                  {selected[0] || ''}
-                  {selected[0] && (
+              // Mostrar todos os itens selecionados
+              <div className="flex flex-wrap gap-1 max-w-full">
+                {selected.slice(0, 5).map((item, index) => (
+                  <span
+                    key={index}
+                    className="bg-purple-600 text-white px-2 py-1 rounded-full text-xs inline-flex items-center gap-1 shadow-lg"
+                  >
+                    {item}
                     <button
                       className="ml-1 hover:text-purple-300 text-white font-bold text-xs transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
-                        removeOption(selected[0]);
+                        removeOption(item);
                       }}
                     >
                       ×
                     </button>
-                  )}
-                </span>
-                <span
-                  className="bg-purple-600 text-white px-2 py-1 rounded-full text-xs inline-flex items-center gap-1 shadow-lg"
-                >
-                  {selected[1] || ''}
-                  {selected[1] && (
-                    <button
-                      className="ml-1 hover:text-purple-300 text-white font-bold text-xs transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeOption(selected[1]);
-                      }}
-                    >
-                      ×
-                    </button>
-                  )}
-                </span>
-                <span className="bg-purple-500 text-white px-2 py-1 rounded-full text-xs inline-flex items-center gap-1 shadow-lg">
-                  {selected.length > 2 ? `+${selected.length - 2}` : ''}
-                </span>
-              </>
+                  </span>
+                ))}
+                {selected.length > 5 && (
+                  <span className="bg-purple-500 text-white px-2 py-1 rounded-full text-xs inline-flex items-center gap-1 shadow-lg">
+                    +{selected.length - 5}
+                  </span>
+                )}
+              </div>
             )}
           </div>
         )}

@@ -43,7 +43,7 @@ const getOpcoesFiltros = async (req, res) => {
     const opcoes = {};
     
     // Buscar UFs únicas
-    const ufQuery = 'SELECT DISTINCT "UF" FROM planilha_dashboard WHERE "UF" IS NOT NULL AND "UF" != \'\' ORDER BY "UF"';
+    const ufQuery = 'SELECT DISTINCT "UF" FROM planilha_dashboard WHERE "UF" IS NOT NULL ORDER BY "UF"';
     const ufResult = await pool.query(ufQuery);
     opcoes.uf = ufResult.rows.map(row => row.UF);
     
@@ -65,7 +65,7 @@ const getOpcoesFiltros = async (req, res) => {
     ];
     
     for (const categoria of categorias) {
-      const query = `SELECT DISTINCT ${categoria.coluna} FROM planilha_dashboard WHERE ${categoria.coluna} IS NOT NULL AND ${categoria.coluna} != '' ORDER BY ${categoria.coluna}`;
+      const query = `SELECT DISTINCT ${categoria.coluna} FROM planilha_dashboard WHERE ${categoria.coluna} IS NOT NULL ORDER BY ${categoria.coluna}`;
       const result = await pool.query(query);
       opcoes[categoria.campo] = result.rows.map(row => row[categoria.coluna.replace(/"/g, '')]);
     }

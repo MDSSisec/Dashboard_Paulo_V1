@@ -63,30 +63,51 @@ export default function App() {
 
   // EFEITO PARA BUSCAR DADOS FILTRADOS QUANDO OS FILTROS MUDAM
   useEffect(() => {
-    // Verificar se há filtros ativos
-    const filtrosAtivos = Object.keys(filtros).filter(k => 
-      filtros[k] && filtros[k].length > 0 && !filtros[k].includes("Todos")
-    );
-    
-    // Se não há filtros ativos, não fazer requisição
-    if (filtrosAtivos.length === 0) {
-      return;
-    }
-    
-    const carregarDadosFiltrados = async () => {
-      try {
-        setLoading(true);
-        const dadosFiltrados = await buscarDadosFiltrados(filtros);
-        setDados(dadosFiltrados);
-      } catch (error) {
-        console.error("Erro ao buscar dados filtrados:", error);
-        setDados([]);
-      } finally {
-        setLoading(false);
+    // Debounce para evitar muitas requisições
+    const timeoutId = setTimeout(() => {
+      // Verificar se há filtros ativos (excluindo "Todos")
+      const filtrosAtivos = Object.keys(filtros).filter(k => 
+        filtros[k] && filtros[k].length > 0 && 
+        !filtros[k].includes("Todos") && 
+        !filtros[k].every(valor => valor === "Todos")
+      );
+      
+             // Se não há filtros ativos, carregar dados iniciais
+       if (filtrosAtivos.length === 0) {
+        const carregarDadosIniciais = async () => {
+          try {
+            setLoading(true);
+            const { dados: dadosIniciais } = await buscarDadosIniciais();
+            setDados(dadosIniciais);
+          } catch (error) {
+            console.error("Erro ao carregar dados iniciais:", error);
+            setDados([]);
+          } finally {
+            setLoading(false);
+          }
+        };
+        carregarDadosIniciais();
+        return;
       }
-    };
+      
+      // Se há filtros ativos, buscar dados filtrados
+      const carregarDadosFiltrados = async () => {
+                 try {
+           setLoading(true);
+           const dadosFiltrados = await buscarDadosFiltrados(filtros);
+          setDados(dadosFiltrados);
+        } catch (error) {
+          console.error("Erro ao buscar dados filtrados:", error);
+          setDados([]);
+        } finally {
+          setLoading(false);
+        }
+      };
 
-    carregarDadosFiltrados();
+      carregarDadosFiltrados();
+         }, 500); // 500ms de debounce
+
+    return () => clearTimeout(timeoutId);
   }, [filtros]);
 
   // Função para atualizar filtros

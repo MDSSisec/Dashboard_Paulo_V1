@@ -5,13 +5,13 @@ from urllib.parse import quote
 
 # 📌 Configurações do Banco
 db_user = "postgres"
-db_password = "Infra2022@#"  # 
+db_password = "@dM1n090710" 
 db_host = "localhost"
 db_port = "5432"
-db_name = "meu_banco_1"
+db_name = "meu_banco_2"
 
 # 📌 Configurações da Planilha
-excel_path = r"/Users/lucasfontoura/Documents/lucas/Projetos_React/Dashboard_Paulo_V1/Dashboard_Paulo_V1-main/banco/banco de dados.xlsx"
+excel_path = r"C:\Users\Gabrielle Cristine\Downloads\Dashboard_Paulo_V1-main (1)\Dashboard_Paulo_V1-main\banco\Planilha_Unificada_visual.xlsx"
 sheet_name = "Dados"
 table_name = "planilha_dashboard"
 
@@ -30,11 +30,13 @@ try:
     # Remover linhas completamente vazias
     df_limpo = df.dropna(how='all')
     
-    # Preencher valores NaN com 'Não Informado' para colunas de texto
+    # Manter valores NaN como NULL para colunas de texto (serão tratados como NULL no PostgreSQL)
     colunas_texto = ['Bolsa Família', 'Situação de Pobreza', 'Setor Econômico', 'Sexo', 'Raça/Cor', 'Grau de Instrução', 'Faixa Etária', 'CadÚnico', 'UF']
     for col in colunas_texto:
         if col in df_limpo.columns:
-            df_limpo[col] = df_limpo[col].fillna('Não Informado')
+            # Converter strings vazias para NaN para que sejam tratadas como NULL no PostgreSQL
+            df_limpo[col] = df_limpo[col].replace('', pd.NA)
+            # Não preencher NaN - deixar como NULL no banco
     
     # Preencher valores NaN com 0 para colunas numéricas
     colunas_numericas = ['Ano', 'Admissoes', 'Desligamentos', 'Saldo']
